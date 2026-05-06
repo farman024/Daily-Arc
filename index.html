@@ -17,6 +17,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   :root {
@@ -693,16 +694,18 @@
         </button>
       </div>
 
-      <!-- REPORT CARD (captured by html2canvas) -->
+      <!-- REPORT CARD (captured by html2canvas — stats only) -->
       <div id="reportCard">
         <div class="report-card-title" id="reportCardTitle"></div>
         <div class="report-stats-grid" id="reportStatsGrid"></div>
         <div id="reportCatBreakdown"></div>
         <div class="report-best-day" id="reportBestDay"></div>
-        <div id="reportWins"></div>
         <div class="report-motto" id="reportMotto"></div>
         <div class="report-brand">DAILY ARC · FARMAN J · AI GENERALIST</div>
       </div>
+
+      <!-- VICTORY LOG (outside card — text/PDF only) -->
+      <div id="reportWins" style="margin:12px 16px 0;"></div>
 
       <!-- SHARE BUTTONS -->
       <div class="share-section">
@@ -724,20 +727,22 @@
           </button>
         </div>
         <div class="share-row">
-          <button class="share-btn copy" onclick="copyReport()">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="5" y="1" width="9" height="11" rx="1.5" stroke="#c084fc" stroke-width="1.2"/>
-              <rect x="2" y="4" width="9" height="11" rx="1.5" stroke="#c084fc" stroke-width="1.2"/>
-            </svg>
-            Copy Text
-          </button>
           <button class="share-btn image" onclick="downloadImage()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="#f5c842" stroke-width="1.2"/>
               <circle cx="5.5" cy="7" r="1.5" stroke="#f5c842" stroke-width="1.1"/>
               <path d="M1.5 11l3.5-3 2.5 2.5 2-2 4 4" stroke="#f5c842" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Save Image
+            Stats Image
+          </button>
+          <button class="share-btn copy" onclick="downloadVictoryPDF()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="#c084fc" stroke-width="1.2"/>
+              <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
+            </svg>
+            Victory PDF
           </button>
         </div>
       </div>
@@ -1437,6 +1442,132 @@ function copyReport() {
   }).catch(() => {
     showToast('Copy failed — try manually');
   });
+}
+
+async function downloadVictoryPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  const monthName = reportDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const rank = getRank(progress.total_xp);
+  const xpEl  = document.querySelector('#reportStatsGrid .report-stat:nth-child(1) .report-stat-val');
+  const doneEl = document.querySelector('#reportStatsGrid .report-stat:nth-child(2) .report-stat-val');
+  const xp    = xpEl  ? xpEl.textContent  : '0';
+  const done  = doneEl ? doneEl.textContent : '0';
+
+  const pageW = 210;
+  const margin = 20;
+  const contentW = pageW - margin * 2;
+  let y = 20;
+
+  // ── background
+  doc.setFillColor(10, 10, 15);
+  doc.rect(0, 0, 210, 297, 'F');
+
+  // ── top accent line
+  doc.setDrawColor(0, 229, 255);
+  doc.setLineWidth(1);
+  doc.line(margin, y, pageW - margin, y);
+  y += 10;
+
+  // ── title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(0, 229, 255);
+  doc.text('DAILY ARC', margin, y);
+  y += 7;
+
+  doc.setFontSize(11);
+  doc.setTextColor(192, 132, 252);
+  doc.text(`VICTORY LOG · ${monthName.toUpperCase()}`, margin, y);
+  y += 5;
+
+  doc.setDrawColor(37, 37, 64);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageW - margin, y);
+  y += 8;
+
+  // ── stats summary bar
+  doc.setFontSize(9);
+  doc.setTextColor(102, 102, 170);
+  doc.text(`Rank: ${rank.name}   |   XP Earned: ${xp}   |   Quests Done: ${done}   |   Streak: ${progress.streak} days`, margin, y);
+  y += 8;
+
+  doc.setDrawColor(37, 37, 64);
+  doc.line(margin, y, pageW - margin, y);
+  y += 10;
+
+  // ── category wins
+  const CAT_COLORS = {
+    trading:  [245, 200, 66],
+    building: [0,   229, 255],
+    personal: [192, 132, 252],
+    health:   [74,  222, 128]
+  };
+
+  const winItems = document.querySelectorAll('#reportWins .wins-cat-block');
+
+  if (!winItems.length) {
+    doc.setTextColor(102, 102, 170);
+    doc.setFontSize(11);
+    doc.text('No completed quests this month yet.', margin, y);
+  } else {
+    winItems.forEach(block => {
+      const catLabel = block.querySelector('.wins-cat-label')?.textContent?.trim() || '';
+      const cat = Object.keys(CATEGORIES).find(k => CATEGORIES[k].label.toLowerCase() === catLabel.toLowerCase()) || 'trading';
+      const [r, g, b] = CAT_COLORS[cat] || [255,255,255];
+
+      // check page space
+      if (y > 265) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+
+      // category header
+      doc.setFillColor(22, 22, 42);
+      doc.roundedRect(margin, y - 4, contentW, 10, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(r, g, b);
+      doc.text(catLabel.toUpperCase(), margin + 4, y + 2);
+      y += 12;
+
+      // win items
+      const wins = block.querySelectorAll('.win-item');
+      wins.forEach(win => {
+        if (y > 270) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(232, 232, 255);
+
+        // checkmark dot
+        doc.setFillColor(r, g, b);
+        doc.circle(margin + 2, y - 1, 1.2, 'F');
+
+        // task text — wrap if long
+        const text = win.textContent.trim();
+        const lines = doc.splitTextToSize(text, contentW - 10);
+        doc.text(lines, margin + 6, y);
+        y += lines.length * 5 + 2;
+      });
+
+      y += 4;
+    });
+  }
+
+  // ── footer
+  if (y > 270) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+  y = Math.max(y + 6, 275);
+  doc.setDrawColor(0, 229, 255);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageW - margin, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(102, 102, 170);
+  doc.text('DAILY ARC · FARMAN J · AI GENERALIST · farman024.github.io/Daily-Arc', margin, y);
+
+  // ── save
+  const fileName = `DailyArc-VictoryLog-${monthName.replace(' ', '-')}.pdf`;
+  doc.save(fileName);
+  showToast('Victory Log PDF saved!');
 }
 
 async function downloadImage() {
