@@ -534,6 +534,47 @@
     color: var(--cyan); letter-spacing: 2px; opacity: 0.7;
   }
 
+  /* wins section */
+  .wins-section {
+    margin-top: 14px;
+  }
+
+  .wins-section-title {
+    font-family: 'Orbitron', monospace; font-size: 10px;
+    letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+
+  .wins-section-title::after {
+    content: ''; flex: 1; height: 1px; background: #252540;
+  }
+
+  .wins-cat-block { margin-bottom: 12px; }
+
+  .wins-cat-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .win-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 6px 10px; background: #16162a;
+    border-radius: 6px; margin-bottom: 4px;
+    font-size: 12px; color: var(--text); line-height: 1.4;
+  }
+
+  .win-check {
+    width: 14px; height: 14px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .wins-empty {
+    font-size: 12px; color: var(--muted);
+    text-align: center; padding: 10px; letter-spacing: 0.5px;
+  }
+
   /* share buttons */
   .share-section {
     padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 10px;
@@ -658,6 +699,7 @@
         <div class="report-stats-grid" id="reportStatsGrid"></div>
         <div id="reportCatBreakdown"></div>
         <div class="report-best-day" id="reportBestDay"></div>
+        <div id="reportWins"></div>
         <div class="report-motto" id="reportMotto"></div>
         <div class="report-brand">DAILY ARC · FARMAN J · AI GENERALIST</div>
       </div>
@@ -1305,6 +1347,40 @@ async function renderReport() {
     <div class="report-best-day-val">${bestDayStr}</div>
   `;
 
+  // ── VICTORY LOG ──
+  const hasAnyWins = Object.keys(CATEGORIES).some(cat => done.filter(t => t.category === cat).length > 0);
+
+  if (!hasAnyWins) {
+    document.getElementById('reportWins').innerHTML = `<div class="wins-empty">No completed quests this month yet.</div>`;
+  } else {
+    let winsHTML = `<div class="wins-section"><div class="wins-section-title">Victory Log</div>`;
+    Object.keys(CATEGORIES).forEach(cat => {
+      const catWins = done.filter(t => t.category === cat);
+      if (!catWins.length) return;
+      const color = CATEGORIES[cat].color;
+      winsHTML += `
+        <div class="wins-cat-block">
+          <div class="wins-cat-label" style="color:${color}">
+            ${CAT_ICONS[cat].replace(/width="16" height="16"/, 'width="12" height="12"')}
+            ${CATEGORIES[cat].label}
+          </div>
+          ${catWins.map(t => `
+            <div class="win-item">
+              <div class="win-check" style="background:${color}20;border:1px solid ${color}60">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                  <polyline points="1,4 3,6 7,2" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              ${escHtml(t.title)}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    });
+    winsHTML += `</div>`;
+    document.getElementById('reportWins').innerHTML = winsHTML;
+  }
+
   const motto = MOTIVATIONS[Math.floor(Math.random() * MOTIVATIONS.length)];
   document.getElementById('reportMotto').textContent = `"${motto}"`;
 }
@@ -1313,19 +1389,32 @@ async function renderReport() {
 function buildShareText() {
   const monthName = reportDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const rank = getRank(progress.total_xp);
-  const xpEl = document.querySelector('#reportStatsGrid .report-stat:nth-child(1) .report-stat-val');
-  const doneEl = document.querySelector('#reportStatsGrid .report-stat:nth-child(2) .report-stat-val');
-  const xp   = xpEl ? xpEl.textContent : '—';
+  const xpEl   = document.querySelector('#reportStatsGrid .report-stat:nth-child(1) .report-stat-val');
+  const doneEl  = document.querySelector('#reportStatsGrid .report-stat:nth-child(2) .report-stat-val');
+  const xp   = xpEl  ? xpEl.textContent  : '—';
   const done = doneEl ? doneEl.textContent : '—';
   const bestEl = document.getElementById('reportBestDay');
   const best = bestEl ? bestEl.querySelector('.report-best-day-val')?.textContent : '—';
+
+  // build wins list per category
+  let winsText = '';
+  Object.keys(CATEGORIES).forEach(cat => {
+    const items = document.querySelectorAll(`#reportWins .win-item`);
+    // collect wins from DOM grouped by category label
+  });
+
+  // simpler — collect all win-item texts
+  const winItems = [...document.querySelectorAll('#reportWins .win-item')];
+  if (winItems.length) {
+    winsText = '\n\nVICTORY LOG:\n' + winItems.map(el => '✓ ' + el.textContent.trim()).join('\n');
+  }
 
   return `DAILY ARC — ${monthName.toUpperCase()} REPORT
 Rank: ${rank.name}
 XP Earned: ${xp}
 Quests Done: ${done}
 Best Day: ${best}
-Streak: ${progress.streak} days
+Streak: ${progress.streak} days${winsText}
 
 — Farman J · AI Generalist
 https://farman024.github.io/Daily-Arc/`;
