@@ -256,6 +256,22 @@
   }
   .cat-select:focus { border-color: var(--cyan); }
 
+  /* custom category picker */
+  .cat-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .cat-pick-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .cat-pick-btn:hover { border-color: var(--cyan); color: var(--text); }
+  .cat-pick-btn.active[data-cat="trading"]  { border-color: #f5c842; color: #f5c842; background: rgba(245,200,66,0.08); }
+  .cat-pick-btn.active[data-cat="building"] { border-color: #00e5ff; color: #00e5ff; background: rgba(0,229,255,0.08); }
+  .cat-pick-btn.active[data-cat="personal"] { border-color: #c084fc; color: #c084fc; background: rgba(192,132,252,0.08); }
+  .cat-pick-btn.active[data-cat="health"]   { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
+
   .add-btn {
     background: linear-gradient(135deg, var(--cyan), var(--purple));
     border: none; border-radius: 8px; padding: 10px 22px;
@@ -319,12 +335,29 @@
     border: 1px solid var(--border); white-space: nowrap; transition: background 0.3s;
   }
 
-  .task-delete {
+  .task-delete, .task-edit {
     background: none; border: none; color: var(--muted); cursor: pointer;
     padding: 4px; border-radius: 4px; display: flex; align-items: center;
     transition: color 0.2s; flex-shrink: 0;
   }
   .task-delete:hover { color: var(--red); }
+  .task-edit:hover   { color: var(--cyan); }
+
+  /* inline edit input */
+  .task-edit-input {
+    flex: 1; background: var(--input-bg);
+    border: 1px solid var(--cyan); border-radius: 6px;
+    padding: 4px 10px; color: var(--text);
+    font-family: 'Rajdhani', sans-serif; font-size: 15px; outline: none;
+  }
+
+  .task-save-btn {
+    background: var(--cyan); border: none; border-radius: 6px;
+    padding: 4px 12px; color: #000;
+    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+  }
+  .task-save-btn:hover { opacity: 0.8; }
 
   .empty-state {
     text-align: center; color: var(--muted);
@@ -480,12 +513,24 @@
     <div class="add-form">
       <input class="task-input" id="taskInput" placeholder="What did you accomplish today?" maxlength="200"/>
       <div class="add-row">
-        <select class="cat-select" id="catSelect">
-          <option value="trading">⚔️ Trading</option>
-          <option value="building">🏗️ Building</option>
-          <option value="personal">🌙 Personal</option>
-          <option value="health">💪 Health</option>
-        </select>
+        <div class="cat-picker" id="catPicker">
+          <button class="cat-pick-btn active" data-cat="trading" onclick="selectCat(this)">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="3" y1="13" x2="6" y2="8" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="8" x2="9" y2="10" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="10" x2="13" y2="3" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="8" r="1.2" fill="#f5c842"/><circle cx="9" cy="10" r="1.2" fill="#f5c842"/><circle cx="13" cy="3" r="1.2" fill="#f5c842"/></svg>
+            Trading
+          </button>
+          <button class="cat-pick-btn" data-cat="building" onclick="selectCat(this)">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="5" height="7" rx="0.5" stroke="#00e5ff" stroke-width="1.3"/><rect x="9" y="4" width="5" height="10" rx="0.5" stroke="#00e5ff" stroke-width="1.3"/><line x1="2" y1="14" x2="14" y2="14" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Building
+          </button>
+          <button class="cat-pick-btn" data-cat="personal" onclick="selectCat(this)">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2 Q9.5 5 13 5.5 Q10 8 10.5 13 Q8 11 5.5 13 Q6 8 3 5.5 Q6.5 5 8 2Z" stroke="#c084fc" stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg>
+            Personal
+          </button>
+          <button class="cat-pick-btn" data-cat="health" onclick="selectCat(this)">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 13 C8 13 2 9 2 5.5 C2 3.5 3.5 2 5.5 2 C6.8 2 7.6 2.8 8 3.5 C8.4 2.8 9.2 2 10.5 2 C12.5 2 14 3.5 14 5.5 C14 9 8 13 8 13Z" stroke="#4ade80" stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg>
+            Health
+          </button>
+        </div>
         <button class="add-btn" onclick="addTask()">+ ADD QUEST</button>
       </div>
     </div>
@@ -507,10 +552,35 @@ const HEADERS = {
 };
 
 const CATEGORIES = {
-  trading:  { label: '⚔️ Trading',  color: '#f5c842', xp: 15 },
-  building: { label: '🏗️ Building', color: '#00e5ff', xp: 12 },
-  personal: { label: '🌙 Personal', color: '#c084fc', xp: 10 },
-  health:   { label: '💪 Health',   color: '#4ade80', xp: 10 }
+  trading:  { label: 'Trading',  color: '#f5c842', xp: 15 },
+  building: { label: 'Building', color: '#00e5ff', xp: 12 },
+  personal: { label: 'Personal', color: '#c084fc', xp: 10 },
+  health:   { label: 'Health',   color: '#4ade80', xp: 10 }
+};
+
+// SVG icons per category — no traditional emojis
+const CAT_ICONS = {
+  trading: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="3" y1="13" x2="6" y2="8" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6" y1="8" x2="9" y2="10" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="9" y1="10" x2="13" y2="3" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="6" cy="8" r="1.2" fill="#f5c842"/>
+    <circle cx="9" cy="10" r="1.2" fill="#f5c842"/>
+    <circle cx="13" cy="3" r="1.2" fill="#f5c842"/>
+  </svg>`,
+  building: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="7" width="5" height="7" rx="0.5" stroke="#00e5ff" stroke-width="1.3"/>
+    <rect x="9" y="4" width="5" height="10" rx="0.5" stroke="#00e5ff" stroke-width="1.3"/>
+    <line x1="4" y1="10" x2="4" y2="10" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="11" y1="7" x2="11" y2="7" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="2" y1="14" x2="14" y2="14" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round"/>
+  </svg>`,
+  personal: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 2 Q9.5 5 13 5.5 Q10 8 10.5 13 Q8 11 5.5 13 Q6 8 3 5.5 Q6.5 5 8 2Z" stroke="#c084fc" stroke-width="1.3" stroke-linejoin="round" fill="none"/>
+  </svg>`,
+  health: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 13 C8 13 2 9 2 5.5 C2 3.5 3.5 2 5.5 2 C6.8 2 7.6 2.8 8 3.5 C8.4 2.8 9.2 2 10.5 2 C12.5 2 14 3.5 14 5.5 C14 9 8 13 8 13Z" stroke="#4ade80" stroke-width="1.3" stroke-linejoin="round" fill="none"/>
+  </svg>`
 };
 
 const RANKS = [
@@ -703,6 +773,7 @@ function renderTasks() {
     sec.innerHTML = `
       <div class="cat-header">
         <div class="cat-dot" style="background:${CATEGORIES[cat].color};box-shadow:0 0 6px ${CATEGORIES[cat].color}"></div>
+        ${CAT_ICONS[cat]}
         <div class="cat-title" style="color:${CATEGORIES[cat].color}">${CATEGORIES[cat].label}</div>
         <div class="cat-count">${ct.filter(t=>t.completed).length}/${ct.length} complete</div>
       </div>
@@ -730,7 +801,13 @@ function makeTaskEl(task) {
     </div>
     <div class="task-text">${escHtml(task.title)}</div>
     <div class="task-xp" style="color:${color};border-color:${color}40">+${task.xp} XP</div>
-    <button class="task-delete" onclick="removeTask('${task.id}', ${task.xp}, ${task.completed})">
+    <button class="task-edit" onclick="startEdit('${task.id}')" title="Edit quest">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9.5 2.5 L11.5 4.5 L4.5 11.5 L2 12 L2.5 9.5 Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="8" y1="4" x2="10" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="task-delete" onclick="removeTask('${task.id}', ${task.xp}, ${task.completed})" title="Delete quest">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -740,14 +817,62 @@ function makeTaskEl(task) {
   return el;
 }
 
+function startEdit(id) {
+  const task = tasks.find(t => t.id == id);
+  if (!task) return;
+  const el = document.getElementById('task-' + id);
+  el.innerHTML = `
+    <input class="task-edit-input" id="edit-input-${id}" value="${escHtml(task.title)}" maxlength="200"/>
+    <button class="task-save-btn" onclick="saveEdit('${id}')">SAVE</button>
+    <button class="task-delete" onclick="cancelEdit('${id}')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  `;
+  const input = document.getElementById('edit-input-' + id);
+  input.focus();
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(id); if (e.key === 'Escape') cancelEdit(id); });
+}
+
+function cancelEdit(id) {
+  renderTasks(); renderArcs();
+}
+
+async function saveEdit(id) {
+  const input = document.getElementById('edit-input-' + id);
+  if (!input) return;
+  const newTitle = input.value.trim();
+  if (!newTitle) { showToast('Quest title cannot be empty'); return; }
+  const task = tasks.find(t => t.id == id);
+  if (!task) return;
+  try {
+    await updateTask(id, { title: newTitle });
+    task.title = newTitle;
+    renderTasks(); renderArcs();
+    showToast('Quest updated');
+  } catch(e) { showToast('Update error'); console.error(e); }
+}
+
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────
+function selectCat(btn) {
+  document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getSelectedCat() {
+  const active = document.querySelector('.cat-pick-btn.active');
+  return active ? active.dataset.cat : 'trading';
+}
+
 async function addTask() {
   const input = document.getElementById('taskInput');
-  const cat   = document.getElementById('catSelect').value;
+  const cat   = getSelectedCat();
   const title = input.value.trim();
   if (!title) { showToast('Write your quest first'); return; }
   try {
