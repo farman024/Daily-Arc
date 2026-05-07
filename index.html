@@ -402,7 +402,7 @@
 
   /* ─── MONTHLY REPORT MODAL ─── */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
     backdrop-filter: blur(6px); z-index: 9000;
     display: flex; align-items: flex-start; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
@@ -411,10 +411,11 @@
   .modal-overlay.show { opacity: 1; pointer-events: all; }
 
   .report-modal {
-    background: #0f0f1a; border: 1px solid #252540;
+    background: var(--bg2); border: 1px solid var(--border);
     border-radius: 20px; width: 100%; max-width: 480px;
     overflow: hidden; position: relative;
     animation: slideUp 0.35s cubic-bezier(.4,0,.2,1);
+    transition: background 0.3s, border-color 0.3s;
   }
 
   @keyframes slideUp {
@@ -451,7 +452,7 @@
   }
 
   .month-nav-btn {
-    background: #16162a; border: 1px solid #252540;
+    background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 14px; color: var(--muted);
     font-family: 'Orbitron', monospace; font-size: 11px;
     cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
@@ -465,8 +466,9 @@
 
   /* report card — captured by html2canvas */
   #reportCard {
-    margin: 0 16px; background: #0a0a0f;
-    border: 1px solid #252540; border-radius: 16px; padding: 20px;
+    margin: 0 16px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .report-card-title {
@@ -481,8 +483,9 @@
   }
 
   .report-stat {
-    background: #16162a; border: 1px solid #252540;
+    background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 12px; text-align: center;
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .report-stat-val {
@@ -497,7 +500,7 @@
 
   .report-cat-row {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid #1a1a2e;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
   }
   .report-cat-row:last-child { border-bottom: none; }
 
@@ -515,9 +518,10 @@
   }
 
   .report-best-day {
-    margin-top: 12px; background: #16162a; border: 1px solid #252540;
+    margin-top: 12px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 10px 14px;
     display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .report-best-day-lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
@@ -536,9 +540,7 @@
   }
 
   /* wins section */
-  .wins-section {
-    margin-top: 14px;
-  }
+  .wins-section { margin-top: 14px; }
 
   .wins-section-title {
     font-family: 'Orbitron', monospace; font-size: 10px;
@@ -547,7 +549,7 @@
   }
 
   .wins-section-title::after {
-    content: ''; flex: 1; height: 1px; background: #252540;
+    content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
   .wins-cat-block { margin-bottom: 12px; }
@@ -560,9 +562,10 @@
 
   .win-item {
     display: flex; align-items: flex-start; gap: 8px;
-    padding: 6px 10px; background: #16162a;
+    padding: 6px 10px; background: var(--surface);
     border-radius: 6px; margin-bottom: 4px;
     font-size: 12px; color: var(--text); line-height: 1.4;
+    transition: background 0.3s;
   }
 
   .win-check {
@@ -585,8 +588,8 @@
 
   .share-btn {
     flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 11px 10px; border-radius: 10px; border: 1px solid #252540;
-    background: #16162a; color: var(--text);
+    padding: 11px 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
     font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
   }
@@ -704,16 +707,15 @@
         <div class="report-brand">DAILY ARC · FARMAN J · AI GENERALIST</div>
       </div>
 
-      <!-- VICTORY LOG (outside card — text/PDF only) -->
-      <div id="reportWins" style="margin:12px 16px 0;"></div>
+      <!-- VICTORY LOG (PDF only — not shown in modal) -->
+      <div id="reportWins" style="display:none;"></div>
 
       <!-- SHARE BUTTONS -->
       <div class="share-section">
         <div class="share-row">
           <button class="share-btn whatsapp" onclick="shareWhatsApp()">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1.5A6.5 6.5 0 0 1 14.5 8c0 3.59-2.91 6.5-6.5 6.5A6.48 6.48 0 0 1 4.3 13.1L1.5 14l.93-2.72A6.48 6.48 0 0 1 1.5 8 6.5 6.5 0 0 1 8 1.5z" stroke="#25d366" stroke-width="1.2"/>
-              <path d="M5.5 5.8c.1-.2.3-.3.5-.3h.3c.2 0 .3.1.4.3l.5 1.2c.1.2 0 .4-.1.5l-.3.3c.3.6.8 1.1 1.4 1.4l.3-.3c.1-.1.3-.2.5-.1l1.2.5c.2.1.3.3.3.4v.3c0 .2-.1.4-.3.5-.8.4-2.1.2-3-1.3-.5-.9-.6-1.9-.7-2.4z" fill="#25d366"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#25d366" d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.1-1.34A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.66 0-3.21-.46-4.54-1.26l-.32-.19-3.03.8.81-2.96-.21-.34A7.94 7.94 0 0 1 4 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8zm4.29-5.68c-.23-.12-1.38-.68-1.59-.76-.21-.08-.37-.12-.52.12-.16.23-.61.76-.75.91-.14.16-.28.18-.51.06-.23-.12-.98-.36-1.87-1.15-.69-.61-1.16-1.37-1.29-1.6-.14-.23-.01-.35.1-.47.1-.1.23-.27.35-.4.12-.14.16-.23.23-.38.08-.16.04-.29-.02-.41-.06-.12-.52-1.26-.72-1.73-.19-.45-.38-.39-.52-.4h-.44c-.15 0-.4.06-.61.29-.21.23-.8.78-.8 1.9s.82 2.2.93 2.35c.12.16 1.62 2.47 3.93 3.46.55.24.98.38 1.31.48.55.17 1.05.15 1.45.09.44-.07 1.38-.56 1.57-1.11.2-.54.2-1.01.14-1.11-.06-.1-.21-.16-.44-.28z"/>
             </svg>
             WhatsApp
           </button>
