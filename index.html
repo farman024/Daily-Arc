@@ -305,9 +305,9 @@
   .task-item {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 13px 16px; margin-bottom: 8px;
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     transition: border-color 0.2s, opacity 0.3s, background 0.3s;
-    animation: slideIn 0.3s ease;
+    animation: slideIn 0.3s ease; overflow: hidden;
   }
 
   @keyframes slideIn {
@@ -329,7 +329,7 @@
   .task-check.checked svg { display: block; }
   .task-check svg { display: none; width: 14px; height: 14px; }
 
-  .task-text { flex: 1; font-size: 15px; color: var(--text); line-height: 1.4; }
+  .task-text { flex: 1; font-size: 15px; color: var(--text); line-height: 1.4; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
 
   .task-xp {
     font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
