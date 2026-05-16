@@ -1324,6 +1324,9 @@ async function renderReport() {
   const totalDone = done.length;
   const totalAll  = monthTasks.length;
 
+  // use actual saved total_xp for display — avoids double-count
+  const displayXP = progress.total_xp;
+
   // best streak from this month
   const rank = getRank(progress.total_xp);
 
@@ -1343,7 +1346,7 @@ async function renderReport() {
   // stats grid
   document.getElementById('reportStatsGrid').innerHTML = `
     <div class="report-stat">
-      <div class="report-stat-val" style="color:#00e5ff">${totalXP}</div>
+      <div class="report-stat-val" style="color:#00e5ff">${displayXP}</div>
       <div class="report-stat-lbl">XP Earned</div>
     </div>
     <div class="report-stat">
