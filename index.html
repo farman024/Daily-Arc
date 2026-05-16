@@ -13,7 +13,7 @@
 <meta name="theme-color" content="#0a0a0f" id="themeColorMeta"/>
 <meta name="description" content="Gamified daily quest board — Farman J · AI Generalist"/>
 <link rel="manifest" id="manifestLink"/>
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230a0a0f'/%3E%3Cpolygon points='96,20 112,68 164,68 122,98 138,148 96,118 54,148 70,98 28,68 80,68' fill='%2300e5ff'/%3E%3C/svg%3E"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230a0a0f'/%3E%3Ccircle cx='96' cy='96' r='70' fill='none' stroke='%23f5c842' stroke-width='6' opacity='0.15'/%3E%3Cpath d='M96 30 C128 30 155 52 155 86 C155 118 130 140 96 140 C62 140 40 118 40 86' stroke='url(%23g1)' stroke-width='7' stroke-linecap='round' fill='none'/%3E%3Cpath d='M96 52 C118 52 136 67 136 86 C136 105 120 120 96 120 C72 120 58 105 58 86 C58 70 68 56 82 52' stroke='url(%23g1)' stroke-width='6' stroke-linecap='round' fill='none'/%3E%3Cpath d='M96 68 C108 68 118 76 118 87 C118 98 109 106 97 106 C85 106 76 98 76 87 C76 78 82 70 90 68' stroke='url(%23g1)' stroke-width='5' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='96' cy='86' r='10' fill='%23f5a623'/%3E%3Ccircle cx='96' cy='86' r='5' fill='%23ffd700'/%3E%3Cpath d='M130 34 C134 26 142 22 146 26 C142 34 134 38 130 34Z' fill='%23f5a623'/%3E%3Cpath d='M108 40 C116 36 122 34 130 34' stroke='%23f5a623' stroke-width='5' stroke-linecap='round' fill='none'/%3E%3Cdefs%3E%3ClinearGradient id='g1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ffd700'/%3E%3Cstop offset='100%25' stop-color='%23f5a623'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E"/>
 
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -603,6 +603,59 @@
   .share-btn.image    { border-color: var(--gold); color: var(--gold); }
   .share-btn.image:hover    { background: rgba(245,200,66,0.1); }
 
+  /* ─── RANK ROADMAP ─── */
+  .rank-roadmap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; margin-bottom: 24px;
+    overflow: hidden; transition: background 0.3s, border-color 0.3s;
+  }
+
+  .roadmap-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; background: none; border: none;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .roadmap-toggle:hover { background: rgba(0,229,255,0.04); }
+
+  .roadmap-toggle-label {
+    font-family: 'Orbitron', monospace; font-size: 12px;
+    font-weight: 700; letter-spacing: 2px; color: var(--cyan);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .roadmap-chevron { transition: transform 0.3s; flex-shrink: 0; }
+  .roadmap-chevron.open { transform: rotate(180deg); }
+
+  .roadmap-list { padding: 4px 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+  .roadmap-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px; border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .roadmap-item.achieved { background: rgba(74,222,128,0.06); border-color: rgba(74,222,128,0.2); }
+  .roadmap-item.current  { border-width: 1.5px; background: rgba(0,229,255,0.06); }
+  .roadmap-item.future   { opacity: 0.45; }
+
+  .roadmap-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .roadmap-info { flex: 1; }
+
+  .roadmap-rank-name {
+    font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  }
+
+  .roadmap-xp-range { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .roadmap-status {
+    font-family: 'Orbitron', monospace; font-size: 10px;
+    letter-spacing: 1px; text-align: right; flex-shrink: 0;
+  }
+
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -801,6 +854,24 @@
     </div>
   </div>
 
+  <!-- RANK ROADMAP -->
+  <div class="rank-roadmap" id="rankRoadmap">
+    <button class="roadmap-toggle" onclick="toggleRoadmap()">
+      <span class="roadmap-toggle-label">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="5.5" stroke="var(--cyan)" stroke-width="1.2"/>
+          <line x1="7" y1="4" x2="7" y2="7.5" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="9.5" r="0.8" fill="var(--cyan)"/>
+        </svg>
+        RANK ROADMAP
+      </span>
+      <svg class="roadmap-chevron" id="roadmapChevron" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polyline points="3,5 7,9 11,5" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="roadmap-list" id="roadmapList" style="display:none;"></div>
+  </div>
+
   <div class="arc-section" id="arcSection"></div>
 
   <div class="add-section">
@@ -879,11 +950,15 @@ const CAT_ICONS = {
 };
 
 const RANKS = [
-  { name: 'GENIN',  min: 0,    max: 100   },
-  { name: 'CHUNIN', min: 100,  max: 300   },
-  { name: 'JONIN',  min: 300,  max: 600   },
-  { name: 'ANBU',   min: 600,  max: 1000  },
-  { name: 'KAGE',   min: 1000, max: 99999 }
+  { name: 'GENIN',               min: 0,     max: 100   },
+  { name: 'CHUNIN',              min: 100,   max: 300   },
+  { name: 'JONIN',               min: 300,   max: 600   },
+  { name: 'ANBU',                min: 600,   max: 1000  },
+  { name: 'KAGE',                min: 1000,  max: 1500  },
+  { name: 'SIX PATHS',           min: 1500,  max: 2500  },
+  { name: 'OTSUTSUKI',           min: 2500,  max: 5000  },
+  { name: 'INFINITE TSUKUYOMI',  min: 5000,  max: 10000 },
+  { name: 'TRUE SHINOBI',        min: 10000, max: 99999 }
 ];
 
 // ─── STATE ───────────────────────────────────────────────────────────────
@@ -916,8 +991,8 @@ function toggleTheme() {
     background_color: '#0a0a0f', theme_color: '#0a0a0f',
     orientation: 'portrait-primary',
     icons: [
-      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230a0a0f'/%3E%3Cpolygon points='96,20 112,68 164,68 122,98 138,148 96,118 54,148 70,98 28,68 80,68' fill='%2300e5ff'/%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0f'/%3E%3Cpolygon points='256,50 296,178 430,178 326,258 366,388 256,308 146,388 186,258 82,178 216,178' fill='%2300e5ff'/%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230a0a0f'/%3E%3Cpath d='M96 30 C128 30 155 52 155 86 C155 118 130 140 96 140 C62 140 40 118 40 86' stroke='%23f5a623' stroke-width='7' stroke-linecap='round' fill='none'/%3E%3Cpath d='M96 52 C118 52 136 67 136 86 C136 105 120 120 96 120 C72 120 58 105 58 86 C58 70 68 56 82 52' stroke='%23f5a623' stroke-width='6' stroke-linecap='round' fill='none'/%3E%3Cpath d='M96 68 C108 68 118 76 118 87 C118 98 109 106 97 106 C85 106 76 98 76 87 C76 78 82 70 90 68' stroke='%23ffd700' stroke-width='5' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='96' cy='86' r='10' fill='%23f5a623'/%3E%3Ccircle cx='96' cy='86' r='5' fill='%23ffd700'/%3E%3Cpath d='M130 34 C134 26 142 22 146 26 C142 34 134 38 130 34Z' fill='%23f5a623'/%3E%3Cpath d='M108 40 C116 36 122 34 130 34' stroke='%23f5a623' stroke-width='5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0f'/%3E%3Cpath d='M256 80 C340 80 412 138 412 228 C412 314 346 370 256 370 C166 370 106 314 106 228' stroke='%23f5a623' stroke-width='18' stroke-linecap='round' fill='none'/%3E%3Cpath d='M256 138 C314 138 360 178 360 228 C360 278 318 318 256 318 C194 318 152 278 152 228 C152 186 178 150 218 138' stroke='%23f5a623' stroke-width='15' stroke-linecap='round' fill='none'/%3E%3Cpath d='M256 182 C286 182 312 202 312 230 C312 258 290 278 258 278 C226 278 202 258 202 230 C202 208 216 188 238 182' stroke='%23ffd700' stroke-width='13' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='256' cy='228' r='26' fill='%23f5a623'/%3E%3Ccircle cx='256' cy='228' r='13' fill='%23ffd700'/%3E%3Cpath d='M346 90 C356 70 376 58 388 68 C376 90 356 100 346 90Z' fill='%23f5a623'/%3E%3Cpath d='M288 106 C308 96 326 90 346 90' stroke='%23f5a623' stroke-width='13' stroke-linecap='round' fill='none'/%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
     ]
   };
   const blob = new Blob([JSON.stringify(m)], { type: 'application/json' });
@@ -997,15 +1072,34 @@ function updatePlayerCard() {
     ? Math.min(100, ((progress.total_xp - rank.min) / (next.min - rank.min)) * 100)
     : 100;
 
+  // rank tier colors
+  const tierColor = rank.index >= 8 ? '#ff6b35' :  // True Shinobi — fire orange
+                    rank.index >= 7 ? '#ff00ff' :  // Infinite Tsukuyomi — magenta
+                    rank.index >= 6 ? '#9945ff' :  // Otsutsuki — deep violet
+                    rank.index >= 5 ? '#ffffff' :  // Six Paths — pure white
+                    rank.index >= 4 ? '#f5c842' :  // Kage — gold
+                    '#00e5ff';                      // rest — cyan
+
   document.getElementById('rankLabel').textContent  = rank.name;
+  document.getElementById('rankLabel').style.color  = tierColor;
   document.getElementById('xpBar').style.width      = pct + '%';
+  document.getElementById('xpBar').style.background = `linear-gradient(90deg, ${tierColor}, var(--purple))`;
+  document.getElementById('xpBar').style.boxShadow  = `0 0 10px ${tierColor}`;
   document.getElementById('xpCurrent').textContent  = progress.total_xp + ' XP';
-  document.getElementById('xpNext').textContent     = rank.index < RANKS.length - 1 ? '→ ' + next.min + ' XP' : 'MAX RANK';
+  document.getElementById('xpNext').textContent     = rank.index < RANKS.length - 1 ? '→ ' + next.min + ' XP' : '👑 TRUE SHINOBI';
   document.getElementById('statStreak').textContent = progress.streak;
   document.getElementById('statXP').textContent     = progress.total_xp;
   document.getElementById('statDone').textContent   = tasks.filter(t => t.completed).length;
 
+  // update rank ring color
+  const ringEl = document.querySelector('.rank-ring');
+  if (ringEl) {
+    ringEl.style.borderTopColor   = tierColor;
+    ringEl.style.borderRightColor = rank.index >= 5 ? '#ff00ff' : 'var(--purple)';
+  }
+
   if (rank.index > prevLevel) { prevLevel = rank.index; showLevelUp(rank.name); }
+  if (roadmapOpen) renderRoadmap();
 }
 
 function showLevelUp(name) {
@@ -1263,6 +1357,81 @@ async function rolloverMissedTasks() {
   } catch(e) {
     console.error('Rollover error:', e);
   }
+}
+
+// ─── RANK ROADMAP ─────────────────────────────────────────────────────────
+const TIER_COLORS = {
+  0: '#00e5ff', 1: '#00e5ff', 2: '#00e5ff', 3: '#00e5ff',
+  4: '#f5c842', 5: '#ffffff', 6: '#9945ff', 7: '#ff00ff', 8: '#ff6b35'
+};
+
+let roadmapOpen = false;
+
+function toggleRoadmap() {
+  roadmapOpen = !roadmapOpen;
+  const list    = document.getElementById('roadmapList');
+  const chevron = document.getElementById('roadmapChevron');
+  if (roadmapOpen) {
+    list.style.display = 'flex';
+    chevron.classList.add('open');
+    renderRoadmap();
+  } else {
+    list.style.display = 'none';
+    chevron.classList.remove('open');
+  }
+}
+
+function renderRoadmap() {
+  const list    = document.getElementById('roadmapList');
+  const rank    = getRank(progress.total_xp);
+  list.innerHTML = '';
+
+  RANKS.forEach((r, i) => {
+    const isAchieved = progress.total_xp >= r.min && i < rank.index;
+    const isCurrent  = i === rank.index;
+    const isFuture   = i > rank.index;
+    const color      = TIER_COLORS[i] || '#00e5ff';
+    const nextMin    = RANKS[i + 1] ? RANKS[i + 1].min : null;
+
+    const item = document.createElement('div');
+    item.className = 'roadmap-item ' + (isAchieved ? 'achieved' : isCurrent ? 'current' : 'future');
+    item.style.borderColor = isCurrent ? color : '';
+
+    // icon
+    let iconInner = '';
+    if (isAchieved) {
+      iconInner = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polyline points="2,7 6,11 12,3" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    } else if (isCurrent) {
+      iconInner = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polygon points="7,2 8.5,5.5 12,6 9.5,8.5 10,12 7,10.5 4,12 4.5,8.5 2,6 5.5,5.5" fill="${color}" opacity="0.9"/>
+      </svg>`;
+    } else {
+      iconInner = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="4" stroke="var(--border)" stroke-width="1.5"/>
+      </svg>`;
+    }
+
+    const xpRange = nextMin
+      ? `${r.min.toLocaleString()} — ${nextMin.toLocaleString()} XP`
+      : `${r.min.toLocaleString()}+ XP`;
+
+    const statusText = isAchieved ? '✓ ACHIEVED' : isCurrent ? 'CURRENT' : `${r.min.toLocaleString()} XP`;
+    const statusColor = isAchieved ? '#4ade80' : isCurrent ? color : 'var(--muted)';
+
+    item.innerHTML = `
+      <div class="roadmap-icon" style="background:${isAchieved ? 'rgba(74,222,128,0.12)' : isCurrent ? color + '18' : 'var(--bg)'}">
+        ${iconInner}
+      </div>
+      <div class="roadmap-info">
+        <div class="roadmap-rank-name" style="color:${isFuture ? 'var(--muted)' : color}">${r.name}</div>
+        <div class="roadmap-xp-range">${xpRange}</div>
+      </div>
+      <div class="roadmap-status" style="color:${statusColor}">${statusText}</div>
+    `;
+    list.appendChild(item);
+  });
 }
 
 // ─── MONTHLY REPORT ───────────────────────────────────────────────────────
