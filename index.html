@@ -656,6 +656,148 @@
     letter-spacing: 1px; text-align: right; flex-shrink: 0;
   }
 
+  /* ─── LOGIN GATE ─── */
+  #loginGate {
+    position: fixed; inset: 0; background: var(--bg);
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  .login-box {
+    width: 100%; max-width: 380px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px 28px;
+    position: relative; overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(.4,0,.2,1);
+  }
+
+  .login-box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple), var(--gold));
+  }
+
+  .login-badge {
+    width: 64px; height: 64px; margin: 0 auto 18px;
+    border-radius: 50%; border: 2px solid var(--cyan);
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg2); box-shadow: 0 0 20px rgba(0,229,255,0.25);
+  }
+
+  .login-title {
+    font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 900;
+    text-align: center; letter-spacing: 2px;
+    background: linear-gradient(135deg, #00e5ff, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+
+  .login-sub {
+    text-align: center; font-size: 12px; color: var(--muted);
+    letter-spacing: 1px; margin-bottom: 28px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .login-field { margin-bottom: 14px; }
+
+  .login-label {
+    font-size: 11px; color: var(--muted); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px; display: block;
+  }
+
+  .login-input {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    font-family: 'Rajdhani', sans-serif; font-size: 15px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: var(--cyan); }
+
+  .login-btn {
+    width: 100%; margin-top: 8px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none; border-radius: 10px; padding: 13px;
+    color: #000; font-family: 'Orbitron', monospace; font-size: 13px;
+    font-weight: 700; letter-spacing: 1px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .login-btn:hover { opacity: 0.85; }
+  .login-btn:active { transform: scale(0.98); }
+
+  .login-error {
+    text-align: center; font-size: 12px; color: var(--red);
+    margin-top: 12px; min-height: 16px; letter-spacing: 0.5px;
+  }
+
+  /* ─── PROFILE PHOTO ─── */
+  .profile-photo-wrap {
+    width: 100%; height: 100%; border-radius: 50%;
+    overflow: hidden; position: relative; cursor: pointer;
+  }
+  .profile-photo-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .profile-edit-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; border-radius: 50%;
+  }
+  .rank-badge:hover .profile-edit-overlay { opacity: 1; }
+
+  /* profile edit modal */
+  .profile-modal-content {
+    padding: 24px;
+  }
+  .profile-photo-preview {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 2px solid var(--cyan); margin: 0 auto 16px;
+    overflow: hidden; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .profile-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-tab-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .profile-tab {
+    flex: 1; padding: 8px; text-align: center; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--input-bg);
+    color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .profile-tab.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.06); }
+
+  /* ─── CERTIFICATE MODAL ─── */
+  .cert-modal {
+    background: var(--bg); border: 2px solid var(--gold);
+    border-radius: 16px; padding: 28px 24px; position: relative;
+    overflow: hidden; max-width: 420px; margin: 0 auto;
+  }
+  .cert-modal::before {
+    content: ''; position: absolute; inset: 8px; border: 1px solid var(--gold);
+    border-radius: 10px; opacity: 0.3; pointer-events: none;
+  }
+  .cert-header { text-align: center; margin-bottom: 18px; }
+  .cert-title {
+    font-family: 'Orbitron', monospace; font-size: 11px;
+    letter-spacing: 3px; color: var(--muted); text-transform: uppercase;
+  }
+  .cert-rank-name {
+    font-family: 'Orbitron', monospace; font-size: 24px; font-weight: 900;
+    margin-top: 6px; letter-spacing: 1px;
+  }
+  .cert-divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .cert-stat-row {
+    display: flex; justify-content: space-between; padding: 8px 0;
+    font-size: 13px; border-bottom: 1px solid var(--border);
+  }
+  .cert-stat-label { color: var(--muted); }
+  .cert-stat-value { font-family: 'Orbitron', monospace; font-weight: 700; color: var(--text); }
+  .cert-footer {
+    text-align: center; margin-top: 18px; font-size: 11px;
+    color: var(--muted); letter-spacing: 1px;
+  }
+  .cert-locked {
+    text-align: center; padding: 30px 20px; color: var(--muted);
+    font-size: 13px; letter-spacing: 0.5px;
+  }
+
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -668,6 +810,92 @@
 </style>
 </head>
 <body>
+
+<!-- LOGIN GATE -->
+<div id="loginGate">
+  <div class="login-box">
+    <div class="login-badge">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <path d="M15 4 C9 4 5 9 5 14 C5 19 9 22 9 22 L9 17 C9 17 7 15 7 12 C7 9 10 6 15 6 C20 6 23 9 23 12 C23 16 20 18 20 18 L20 24 C20 26 18 27 15 27 C12 27 10 26 10 24"
+          stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <circle cx="15" cy="14" r="2.2" fill="#00e5ff"/>
+      </svg>
+    </div>
+    <div class="login-title">DAILY ARC</div>
+    <div class="login-sub">毎日の弧 · RESTRICTED ACCESS</div>
+
+    <div class="login-field">
+      <label class="login-label">Username</label>
+      <input type="text" class="login-input" id="loginUser" placeholder="Enter username" autocomplete="off"/>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input type="password" class="login-input" id="loginPass" placeholder="Enter password" autocomplete="off"/>
+    </div>
+    <button class="login-btn" onclick="attemptLogin()">UNLOCK ARC</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- PROFILE EDIT MODAL -->
+<div class="modal-overlay" id="profileOverlay" onclick="closeProfileOutside(event)">
+  <div class="report-modal" style="max-width:380px;">
+    <div class="report-header">
+      <div class="report-title">EDIT PROFILE</div>
+      <button class="report-close" onclick="closeProfileModal()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="profile-modal-content">
+      <div class="profile-photo-preview" id="profilePhotoPreview">
+        <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="13" r="6" stroke="#6666aa" stroke-width="1.5"/>
+          <path d="M6 30c0-7 5-11 12-11s12 4 12 11" stroke="#6666aa" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="profile-tab-row">
+        <div class="profile-tab active" id="tabUpload" onclick="switchProfileTab('upload')">Upload Photo</div>
+        <div class="profile-tab" id="tabUrl" onclick="switchProfileTab('url')">Paste URL</div>
+      </div>
+
+      <div id="uploadPanel">
+        <input type="file" id="photoFileInput" accept="image/*" style="display:none;" onchange="handlePhotoFile(event)"/>
+        <button class="add-btn" style="width:100%;" onclick="document.getElementById('photoFileInput').click()">CHOOSE FROM DEVICE</button>
+      </div>
+      <div id="urlPanel" style="display:none;">
+        <input type="text" class="task-input" id="photoUrlInput" placeholder="Paste image URL" style="width:100%;margin-bottom:8px;"/>
+        <button class="add-btn" style="width:100%;" onclick="applyPhotoUrl()">USE THIS URL</button>
+      </div>
+
+      <div class="login-field" style="margin-top:18px;">
+        <label class="login-label">Display Name</label>
+        <input type="text" class="login-input" id="profileNameInput" placeholder="Your name"/>
+      </div>
+
+      <button class="add-btn" style="width:100%;margin-top:10px;" onclick="saveProfile()">SAVE PROFILE</button>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATE MODAL -->
+<div class="modal-overlay" id="certOverlay" onclick="closeCertOutside(event)">
+  <div style="width:100%;max-width:420px;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button class="report-close" onclick="closeCertModal()" style="background:var(--surface);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div id="certContent"></div>
+  </div>
+</div>
+
 
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
@@ -694,6 +922,13 @@
     <!-- Moon: shown in light mode -->
     <svg class="icon-moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="#6666aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <button class="theme-btn" onclick="logout()" title="Logout">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M11 11l3-3-3-3" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="14" y1="8" x2="6" y2="8" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
   </button>
 </div>
@@ -805,30 +1040,37 @@
   </div>
 
   <div class="player-card">
-    <div class="rank-badge">
+    <div class="rank-badge" onclick="openProfileModal()" id="profileBadge" style="cursor:pointer;">
       <div class="rank-ring"></div>
-      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- outer ring -->
-        <circle cx="18" cy="18" r="13" stroke="#00e5ff" stroke-width="1.2" opacity="0.35"/>
-        <!-- mid ring -->
-        <circle cx="18" cy="18" r="8.5" stroke="#00e5ff" stroke-width="1" opacity="0.55"/>
-        <!-- glowing core -->
-        <circle cx="18" cy="18" r="4" fill="#00e5ff" opacity="0.95"/>
-        <circle cx="18" cy="18" r="2" fill="#ffffff" opacity="0.8"/>
-        <!-- spiral arms — 4 curved strokes radiating outward -->
-        <path d="M18 14 Q20 10 18 5" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <path d="M22 18 Q26 20 31 18" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <path d="M18 22 Q16 26 18 31" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <path d="M14 18 Q10 16 5 18" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <!-- secondary diagonal arms -->
-        <path d="M21 15 Q25 11 29 7" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
-        <path d="M21 21 Q25 25 29 29" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
-        <path d="M15 21 Q11 25 7 29" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
-        <path d="M15 15 Q11 11 7 7" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
-      </svg>
+      <div class="profile-photo-wrap" id="badgeContent">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- outer ring -->
+          <circle cx="18" cy="18" r="13" stroke="#00e5ff" stroke-width="1.2" opacity="0.35"/>
+          <!-- mid ring -->
+          <circle cx="18" cy="18" r="8.5" stroke="#00e5ff" stroke-width="1" opacity="0.55"/>
+          <!-- glowing core -->
+          <circle cx="18" cy="18" r="4" fill="#00e5ff" opacity="0.95"/>
+          <circle cx="18" cy="18" r="2" fill="#ffffff" opacity="0.8"/>
+          <!-- spiral arms — 4 curved strokes radiating outward -->
+          <path d="M18 14 Q20 10 18 5" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
+          <path d="M22 18 Q26 20 31 18" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
+          <path d="M18 22 Q16 26 18 31" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
+          <path d="M14 18 Q10 16 5 18" stroke="#00e5ff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.9"/>
+          <!-- secondary diagonal arms -->
+          <path d="M21 15 Q25 11 29 7" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
+          <path d="M21 21 Q25 25 29 29" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
+          <path d="M15 21 Q11 25 7 29" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
+          <path d="M15 15 Q11 11 7 7" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.45"/>
+        </svg>
+      </div>
+      <div class="profile-edit-overlay">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M11 3 L14 6 L6 14 L3 14 L3 11 Z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
     <div class="player-info">
-      <div class="player-name">FARMAN J</div>
+      <div class="player-name" id="playerNameDisplay">FARMAN J</div>
       <div class="player-rank-label" id="rankLabel">GENIN</div>
       <div class="xp-bar-wrap">
         <div class="xp-bar" id="xpBar" style="width:0%"></div>
@@ -916,6 +1158,56 @@ const HEADERS = {
   'Content-Type': 'application/json',
   'Prefer': 'return=representation'
 };
+
+// ─── LOGIN GATE CONFIG ─────────────────────────────────────────────────────
+const AUTH_USER = 'Falcon';
+const AUTH_PASS_HASH = 'abe6817b2e875c469087df2fd0975216903fa8c83d9352ac9a06a095834faec2'; // sha256 hash
+const AUTH_SESSION_KEY = 'da-auth-session';
+
+async function sha256(text) {
+  const enc = new TextEncoder().encode(text);
+  const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+  return [...new Uint8Array(hashBuf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function attemptLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+
+  if (!user || !pass) { errEl.textContent = 'Enter username and password'; return; }
+
+  const passHash = await sha256(pass);
+
+  if (user === AUTH_USER && passHash === AUTH_PASS_HASH) {
+    localStorage.setItem(AUTH_SESSION_KEY, 'true');
+    document.getElementById('loginGate').style.display = 'none';
+    init();
+  } else {
+    errEl.textContent = 'Incorrect username or password';
+    document.getElementById('loginPass').value = '';
+  }
+}
+
+function checkAuth() {
+  const session = localStorage.getItem(AUTH_SESSION_KEY);
+  if (session === 'true') {
+    document.getElementById('loginGate').style.display = 'none';
+    init();
+  } else {
+    document.getElementById('loginGate').style.display = 'flex';
+  }
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginPass')?.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+  document.getElementById('loginUser')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+});
 
 const CATEGORIES = {
   trading:  { label: 'Trading',  color: '#f5c842', xp: 15 },
@@ -1328,6 +1620,7 @@ async function init() {
     // rollover missed tasks from previous days
     await rolloverMissedTasks();
     renderTasks(); renderArcs(); updatePlayerCard();
+    renderProfile();
     setSyncStatus('live');
   } catch(e) {
     setSyncStatus('error');
@@ -1337,7 +1630,7 @@ async function init() {
 }
 
 document.getElementById('taskInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
-init();
+checkAuth();
 
 // ─── REAL STREAK CALCULATOR ───────────────────────────────────────────────
 async function calcRealStreak() {
@@ -1444,6 +1737,8 @@ function renderRoadmap() {
     const item = document.createElement('div');
     item.className = 'roadmap-item ' + (isAchieved ? 'achieved' : isCurrent ? 'current' : 'future');
     item.style.borderColor = isCurrent ? color : '';
+    item.style.cursor = 'pointer';
+    item.onclick = () => openCertificate(i);
 
     // icon
     let iconInner = '';
@@ -1846,6 +2141,244 @@ async function downloadImage() {
     showToast('Image generation failed');
     console.error(e);
   }
+}
+
+// ─── PROFILE FEATURE ────────────────────────────────────────────────────────
+let pendingPhotoData = null; // base64 or url staged before save
+
+function renderProfile() {
+  const name  = progress.player_name || 'FARMAN J';
+  const photo = progress.player_photo || null;
+
+  document.getElementById('playerNameDisplay').textContent = name;
+
+  const badgeContent = document.getElementById('badgeContent');
+  if (photo) {
+    badgeContent.innerHTML = `<img src="${photo}" alt="profile"/>`;
+  }
+}
+
+function openProfileModal() {
+  document.getElementById('profileNameInput').value = progress.player_name || 'FARMAN J';
+  const preview = document.getElementById('profilePhotoPreview');
+  const photo = progress.player_photo || null;
+  if (photo) {
+    preview.innerHTML = `<img src="${photo}" alt="preview"/>`;
+  } else {
+    preview.innerHTML = `<svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="13" r="6" stroke="#6666aa" stroke-width="1.5"/>
+      <path d="M6 30c0-7 5-11 12-11s12 4 12 11" stroke="#6666aa" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>`;
+  }
+  pendingPhotoData = photo;
+  document.getElementById('profileOverlay').classList.add('show');
+}
+
+function closeProfileModal() {
+  document.getElementById('profileOverlay').classList.remove('show');
+}
+
+function closeProfileOutside(e) {
+  if (e.target === document.getElementById('profileOverlay')) closeProfileModal();
+}
+
+function switchProfileTab(tab) {
+  document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
+  document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
+  document.getElementById('uploadPanel').style.display = tab === 'upload' ? 'block' : 'none';
+  document.getElementById('urlPanel').style.display     = tab === 'url'    ? 'block' : 'none';
+}
+
+function handlePhotoFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('Image too large — max 2MB'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingPhotoData = e.target.result;
+    document.getElementById('profilePhotoPreview').innerHTML = `<img src="${pendingPhotoData}" alt="preview"/>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyPhotoUrl() {
+  const url = document.getElementById('photoUrlInput').value.trim();
+  if (!url) { showToast('Paste an image URL first'); return; }
+  pendingPhotoData = url;
+  document.getElementById('profilePhotoPreview').innerHTML = `<img src="${url}" alt="preview" onerror="this.parentElement.innerHTML='<span style=\\'color:var(--red);font-size:10px;\\'>Invalid URL</span>'"/>`;
+}
+
+async function saveProfile() {
+  const name = document.getElementById('profileNameInput').value.trim() || 'FARMAN J';
+  try {
+    const updates = { player_name: name };
+    if (pendingPhotoData) updates.player_photo = pendingPhotoData;
+    await saveProgress(updates);
+    progress.player_name  = name;
+    if (pendingPhotoData) progress.player_photo = pendingPhotoData;
+    renderProfile();
+    closeProfileModal();
+    showToast('Profile updated!');
+  } catch(e) {
+    showToast('Could not save profile — image may be too large');
+    console.error(e);
+  }
+}
+
+// ─── RANK CERTIFICATES ──────────────────────────────────────────────────────
+async function openCertificate(rankIndex) {
+  const rank = RANKS[rankIndex];
+  const currentRank = getRank(progress.total_xp);
+
+  if (rankIndex > currentRank.index) {
+    document.getElementById('certContent').innerHTML = `
+      <div class="cert-modal">
+        <div class="cert-locked">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin-bottom:10px;">
+            <rect x="8" y="14" width="16" height="12" rx="2" stroke="var(--muted)" stroke-width="1.5"/>
+            <path d="M11 14v-3a5 5 0 0 1 10 0v3" stroke="var(--muted)" stroke-width="1.5"/>
+          </svg>
+          <div>${rank.name} not yet achieved</div>
+          <div style="margin-top:6px;font-size:11px;">Reach ${rank.min.toLocaleString()} XP to unlock this certificate</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('certOverlay').classList.add('show');
+    return;
+  }
+
+  showToast('Loading certificate...');
+
+  try {
+    // find earliest date this rank's XP threshold was crossed
+    const allDone = await sb('GET', 'daily_tasks', null, `?completed=eq.true&order=date.asc`);
+    let cumulativeXP = 0;
+    let achievedDate = null;
+    const sorted = (allDone || []).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    for (const t of sorted) {
+      cumulativeXP += (t.xp || 0);
+      if (cumulativeXP >= rank.min && !achievedDate) {
+        achievedDate = t.date;
+        break;
+      }
+    }
+
+    // first ever task date = journey start
+    const firstDate = sorted.length ? sorted[0].date : todayStr;
+    const daysToReach = achievedDate
+      ? Math.max(1, Math.round((new Date(achievedDate) - new Date(firstDate)) / 86400000) + 1)
+      : '—';
+
+    const tierColor = TIER_COLORS[rankIndex] || '#00e5ff';
+    const name = progress.player_name || 'FARMAN J';
+
+    document.getElementById('certContent').innerHTML = `
+      <div class="cert-modal" id="certCard" style="border-color:${tierColor}">
+        <div class="cert-header">
+          <div class="cert-title">DAILY ARC · CERTIFICATE OF ACHIEVEMENT</div>
+          <div class="cert-rank-name" style="color:${tierColor}">${rank.name}</div>
+        </div>
+        <div class="cert-divider"></div>
+        <div class="cert-stat-row"><span class="cert-stat-label">Name</span><span class="cert-stat-value">${escHtml(name)}</span></div>
+        <div class="cert-stat-row"><span class="cert-stat-label">Rank Achieved</span><span class="cert-stat-value" style="color:${tierColor}">${rank.name}</span></div>
+        <div class="cert-stat-row"><span class="cert-stat-label">Days Taken</span><span class="cert-stat-value">${daysToReach} days</span></div>
+        <div class="cert-stat-row"><span class="cert-stat-label">XP at Achievement</span><span class="cert-stat-value">${rank.min.toLocaleString()} XP</span></div>
+        <div class="cert-stat-row" style="border-bottom:none;"><span class="cert-stat-label">Date Achieved</span><span class="cert-stat-value">${achievedDate ? new Date(achievedDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span></div>
+        <div class="cert-footer">DAILY ARC · FARMAN J · AI GENERALIST</div>
+      </div>
+      <button class="add-btn" style="width:100%;margin-top:14px;" onclick="downloadCertPDF('${rank.name}', '${daysToReach}', ${rank.min}, '${achievedDate || ''}', '${tierColor}')">
+        DOWNLOAD CERTIFICATE PDF
+      </button>
+    `;
+    document.getElementById('certOverlay').classList.add('show');
+  } catch(e) {
+    showToast('Could not load certificate');
+    console.error(e);
+  }
+}
+
+function closeCertModal() {
+  document.getElementById('certOverlay').classList.remove('show');
+}
+
+function closeCertOutside(e) {
+  if (e.target === document.getElementById('certOverlay')) closeCertModal();
+}
+
+function hexToRgb(hex) {
+  const m = hex.replace('#','').match(/.{1,2}/g);
+  return m.map(x => parseInt(x, 16));
+}
+
+function downloadCertPDF(rankName, days, xp, dateStr, colorHex) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+  const name = progress.player_name || 'FARMAN J';
+  const [r, g, b] = hexToRgb(colorHex);
+
+  const pageW = 297, pageH = 210;
+
+  // background
+  doc.setFillColor(10, 10, 15);
+  doc.rect(0, 0, pageW, pageH, 'F');
+
+  // outer border
+  doc.setDrawColor(r, g, b);
+  doc.setLineWidth(1.2);
+  doc.rect(12, 12, pageW - 24, pageH - 24);
+
+  // inner border
+  doc.setDrawColor(r, g, b);
+  doc.setLineWidth(0.4);
+  doc.rect(18, 18, pageW - 36, pageH - 36);
+
+  // title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(102, 102, 170);
+  doc.text('DAILY ARC · CERTIFICATE OF ACHIEVEMENT', pageW/2, 45, { align: 'center' });
+
+  // rank name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(36);
+  doc.setTextColor(r, g, b);
+  doc.text(rankName, pageW/2, 70, { align: 'center' });
+
+  // subtitle line
+  doc.setDrawColor(r, g, b);
+  doc.setLineWidth(0.5);
+  doc.line(pageW/2 - 40, 78, pageW/2 + 40, 78);
+
+  // body text
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(232, 232, 255);
+  doc.text(`This certifies that`, pageW/2, 95, { align: 'center' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.text(name, pageW/2, 108, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(232, 232, 255);
+  doc.text(`has achieved the rank of ${rankName} in Daily Arc`, pageW/2, 120, { align: 'center' });
+
+  // stats row
+  const dateFormatted = dateStr ? new Date(dateStr).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+  doc.setFontSize(11);
+  doc.setTextColor(102, 102, 170);
+  doc.text(`${days} Days Taken   •   ${xp.toLocaleString()} XP Earned   •   Achieved ${dateFormatted}`, pageW/2, 140, { align: 'center' });
+
+  // footer
+  doc.setFontSize(10);
+  doc.setTextColor(102, 102, 170);
+  doc.text('DAILY ARC · FARMAN J · AI GENERALIST · farman024.github.io/Daily-Arc', pageW/2, pageH - 25, { align: 'center' });
+
+  doc.save(`DailyArc-Certificate-${rankName.replace(/\s+/g,'-')}.pdf`);
+  showToast('Certificate PDF saved!');
 }
 </script>
 </body>
