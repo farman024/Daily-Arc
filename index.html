@@ -883,15 +883,13 @@
 
 <!-- CERTIFICATE MODAL -->
 <div class="modal-overlay" id="certOverlay" onclick="closeCertOutside(event)">
-  <div style="width:100%;max-width:420px;">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button class="report-close" onclick="closeCertModal()" style="background:var(--surface);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
+  <div style="width:100%;max-width:420px;margin:0 auto;position:relative;">
+    <button class="report-close" onclick="closeCertModal()" style="position:absolute;top:14px;right:14px;z-index:10;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div id="certContent"></div>
   </div>
 </div>
