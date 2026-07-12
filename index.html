@@ -1023,12 +1023,23 @@
             </svg>
             Stats Image
           </button>
-          <button class="share-btn copy" onclick="downloadVictoryPDF()">
+          <button class="share-btn copy" onclick="copyReport()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="#c084fc" stroke-width="1.2"/>
               <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
               <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
               <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
+            </svg>
+            Copy Text
+          </button>
+        </div>
+        <div class="share-row">
+          <button class="share-btn image" onclick="downloadVictoryPDF()" style="border-color:var(--gold);color:var(--gold);">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="var(--gold)" stroke-width="1.2"/>
+              <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="var(--gold)" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="var(--gold)" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="var(--gold)" stroke-width="1.1" stroke-linecap="round"/>
             </svg>
             Victory PDF
           </button>
@@ -1671,7 +1682,7 @@ async function calcRealStreak() {
       }
     }
 
-    return Math.max(streak, 1);
+    return Math.max(streak, 0);
   } catch(e) {
     console.error('Streak calc error:', e);
     return progress.streak || 1;
@@ -1944,14 +1955,9 @@ function buildShareText() {
   const bestEl = document.getElementById('reportBestDay');
   const best = bestEl ? bestEl.querySelector('.report-best-day-val')?.textContent : '—';
 
-  // build wins list per category
   let winsText = '';
-  Object.keys(CATEGORIES).forEach(cat => {
-    const items = document.querySelectorAll(`#reportWins .win-item`);
-    // collect wins from DOM grouped by category label
-  });
 
-  // simpler — collect all win-item texts
+  // collect all win-item texts
   const winItems = [...document.querySelectorAll('#reportWins .win-item')];
   if (winItems.length) {
     winsText = '\n\nVICTORY LOG:\n' + winItems.map(el => '✓ ' + el.textContent.trim()).join('\n');
