@@ -1,5 +1,9 @@
 # Daily Arc · 毎日の弧
 
+<p align="center">
+  <img src="logo.png" alt="Daily Arc" width="120"/>
+</p>
+
 > *A gamified daily quest board. Assign your missions. Complete them by EOD. Rank up.*
 
 **Live App →** https://farman024.github.io/Daily-Arc/
