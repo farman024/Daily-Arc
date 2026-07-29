@@ -12,9 +12,9 @@
 
 ## What It Is
 
-Daily Arc is a personal quest system built for people who take their daily output seriously. Assign quests across Trading, Building, Personal, and Health — close them before end of day. Every completed quest earns XP. XP builds your rank. Rank reflects discipline.
+Daily Arc is a Naruto-themed personal quest system built for people who take their daily output seriously. Assign quests across Trading, Building, Personal, and Health — close them before end of day. Every completed quest earns XP. XP builds your rank. Rank reflects discipline.
 
-Built with a cyber-ninja aesthetic — dark/light themes, animated arc rings, and a Supabase backend for persistent progress across devices.
+Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc rings, and a Supabase backend for persistent progress across devices.
 
 ---
 
