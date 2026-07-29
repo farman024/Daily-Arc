@@ -1193,8 +1193,8 @@ const HEADERS = {
 };
 
 // ─── LOGIN GATE CONFIG ─────────────────────────────────────────────────────
-const AUTH_USER = 'Falcon';
-const AUTH_PASS_HASH = 'abe6817b2e875c469087df2fd0975216903fa8c83d9352ac9a06a095834faec2'; // sha256 hash
+const AUTH_USERS = ['Falcon', 'Farman'];
+const AUTH_PASS_HASH = 'a84571394b5e99fe70aae39ece25f844acbaf83479e27f39a30732e092b19677'; // sha256('falcon')
 const AUTH_SESSION_KEY = 'da-auth-session';
 
 async function sha256(text) {
@@ -1212,7 +1212,7 @@ async function attemptLogin() {
 
   const passHash = await sha256(pass);
 
-  if (user === AUTH_USER && passHash === AUTH_PASS_HASH) {
+  if (AUTH_USERS.includes(user) && passHash === AUTH_PASS_HASH) {
     localStorage.setItem(AUTH_SESSION_KEY, 'true');
     document.getElementById('loginGate').style.display = 'none';
     init();
