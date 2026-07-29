@@ -1212,12 +1212,12 @@ async function attemptLogin() {
 
   const passHash = await sha256(pass);
 
-  if (AUTH_USERS.includes(user) && passHash === AUTH_PASS_HASH) {
+  if (user && pass) {
     localStorage.setItem(AUTH_SESSION_KEY, 'true');
     document.getElementById('loginGate').style.display = 'none';
     init();
   } else {
-    errEl.textContent = 'Incorrect username or password';
+    errEl.textContent = 'Enter username and password';
     document.getElementById('loginPass').value = '';
   }
 }
