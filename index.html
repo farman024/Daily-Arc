@@ -1194,7 +1194,6 @@ const HEADERS = {
 
 // ─── LOGIN GATE CONFIG ─────────────────────────────────────────────────────
 const AUTH_USERS = ['Falcon', 'Farman'];
-const AUTH_PASS_HASH = 'a84571394b5e99fe70aae39ece25f844acbaf83479e27f39a30732e092b19677'; // sha256('falcon')
 const AUTH_SESSION_KEY = 'da-auth-session';
 
 async function sha256(text) {
@@ -1210,16 +1209,9 @@ async function attemptLogin() {
 
   if (!user || !pass) { errEl.textContent = 'Enter username and password'; return; }
 
-  const passHash = await sha256(pass);
-
-  if (user && pass) {
-    localStorage.setItem(AUTH_SESSION_KEY, 'true');
-    document.getElementById('loginGate').style.display = 'none';
-    init();
-  } else {
-    errEl.textContent = 'Enter username and password';
-    document.getElementById('loginPass').value = '';
-  }
+  localStorage.setItem(AUTH_SESSION_KEY, 'true');
+  document.getElementById('loginGate').style.display = 'none';
+  init();
 }
 
 function checkAuth() {
