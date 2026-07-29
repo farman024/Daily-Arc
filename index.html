@@ -847,7 +847,7 @@
       <label class="login-label">Password</label>
       <input type="password" class="login-input" id="loginPass" placeholder="Enter password" autocomplete="off"/>
     </div>
-    <button class="login-btn" onclick="attemptLogin()">UNLOCK ARC</button>
+    <button class="login-btn" id="loginBtn">UNLOCK ARC</button>
     <div class="login-error" id="loginError"></div>
   </div>
 </div>
@@ -1238,6 +1238,7 @@ function logout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginBtn')?.addEventListener('click', attemptLogin);
   document.getElementById('loginPass')?.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
   document.getElementById('loginUser')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
 });
