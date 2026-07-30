@@ -2094,6 +2094,20 @@ async function downloadVictoryPDF() {
   const contentW = pageW - margin * 2;
   let y = 20;
 
+  let pageNum = 1;
+  function addFooter() {
+    doc.setDrawColor(0, 229, 255);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(102, 102, 170);
+    doc.text(`DAILY ARC · ${pname} · AI GENERALIST · farman024.github.io/Daily-Arc`, margin, y);
+    doc.text(`${pageNum}`, pageW - margin, y, { align: 'right' });
+    pageNum++;
+  }
+
   // ── background
   doc.setFillColor(10, 10, 15);
   doc.rect(0, 0, 210, 297, 'F');
@@ -2114,6 +2128,11 @@ async function downloadVictoryPDF() {
   doc.setFontSize(11);
   doc.setTextColor(192, 132, 252);
   doc.text(`VICTORY LOG · ${monthName.toUpperCase()}`, margin, y);
+  y += 5;
+
+  doc.setFontSize(10);
+  doc.setTextColor(232, 232, 255);
+  doc.text(`${pname}`, margin, y);
   y += 5;
 
   doc.setDrawColor(37, 37, 64);
@@ -2151,7 +2170,7 @@ async function downloadVictoryPDF() {
       if (!catTasks.length) return;
       const [r, g, b] = CAT_COLORS[cat] || [255,255,255];
 
-      if (y > 265) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+      if (y > 265) { addFooter(); doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
 
       // category header
       doc.setFillColor(22, 22, 42);
@@ -2163,7 +2182,7 @@ async function downloadVictoryPDF() {
       y += 12;
 
       catTasks.forEach(task => {
-        if (y > 270) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+        if (y > 270) { addFooter(); doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
 
         // date label on right
         const dateStr = new Date(task.date).toLocaleDateString('en-GB', { day:'2-digit', month:'short' }).toUpperCase();
@@ -2193,16 +2212,8 @@ async function downloadVictoryPDF() {
   }
 
   // ── footer
-  if (y > 270) { doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
-  y = Math.max(y + 6, 275);
-  doc.setDrawColor(0, 229, 255);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(102, 102, 170);
-  doc.text(`DAILY ARC · ${pname} · AI GENERALIST · farman024.github.io/Daily-Arc`, margin, y);
+  if (y > 270) { addFooter(); doc.addPage(); doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F'); y = 20; }
+  addFooter();
 
   // ── save
   const fileName = `DailyArc-VictoryLog-${monthName.replace(' ', '-')}.pdf`;
