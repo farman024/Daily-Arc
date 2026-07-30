@@ -2082,6 +2082,7 @@ async function downloadVictoryPDF() {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
   const monthName = reportDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const pname = progress.player_name || 'FARMAN J';
   const rank = getRank(progress.total_xp);
   const xpEl  = document.querySelector('#reportStatsGrid .report-stat:nth-child(1) .report-stat-val');
   const doneEl = document.querySelector('#reportStatsGrid .report-stat:nth-child(2) .report-stat-val');
@@ -2201,7 +2202,7 @@ async function downloadVictoryPDF() {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(102, 102, 170);
-  doc.text('DAILY ARC · FARMAN J · AI GENERALIST · farman024.github.io/Daily-Arc', margin, y);
+  doc.text(`DAILY ARC · ${pname} · AI GENERALIST · farman024.github.io/Daily-Arc`, margin, y);
 
   // ── save
   const fileName = `DailyArc-VictoryLog-${monthName.replace(' ', '-')}.pdf`;
@@ -2463,7 +2464,7 @@ function downloadCertPDF(rankName, days, xp, dateStr, colorHex) {
   // footer
   doc.setFontSize(10);
   doc.setTextColor(102, 102, 170);
-  doc.text('DAILY ARC · FARMAN J · AI GENERALIST · farman024.github.io/Daily-Arc', pageW/2, pageH - 25, { align: 'center' });
+  doc.text(`DAILY ARC · ${name} · AI GENERALIST · farman024.github.io/Daily-Arc`, pageW/2, pageH - 25, { align: 'center' });
 
   doc.save(`DailyArc-Certificate-${rankName.replace(/\s+/g,'-')}.pdf`);
   showToast('Certificate PDF saved!');
