@@ -2125,15 +2125,11 @@ async function downloadVictoryPDF() {
   doc.text('DAILY ARC', margin, y);
   y += 7;
 
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(192, 132, 252);
-  doc.text(`VICTORY LOG · ${monthName.toUpperCase()}`, margin, y);
-  y += 5;
-
-  doc.setFontSize(10);
-  doc.setTextColor(232, 232, 255);
-  doc.text(`${pname}`, margin, y);
-  y += 5;
+  doc.text(`VICTORY LOG · ${monthName.toUpperCase()} · ${pname}`, margin, y);
+  y += 8;
 
   doc.setDrawColor(37, 37, 64);
   doc.setLineWidth(0.3);
