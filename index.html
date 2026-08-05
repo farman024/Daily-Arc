@@ -76,18 +76,23 @@
   .orb {
     position: fixed; border-radius: 50%;
     filter: blur(80px); pointer-events: none; z-index: 0;
+    animation: orbDrift 16s ease-in-out infinite alternate;
+  }
+  @keyframes orbDrift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, -24px) scale(1.08); }
   }
   [data-theme="dark"] .orb { opacity: 0.18; }
   [data-theme="light"] .orb { opacity: 0.07; }
   .orb-1 { width: 500px; height: 500px; background: #c084fc; top: -200px; right: -100px; }
-  .orb-2 { width: 400px; height: 400px; background: #00e5ff; bottom: -150px; left: -100px; }
-  .orb-3 { width: 300px; height: 300px; background: #f5c842; top: 40%; left: 40%; }
+  .orb-2 { width: 400px; height: 400px; background: #00e5ff; bottom: -150px; left: -100px; animation-delay: -5s; }
+  .orb-3 { width: 300px; height: 300px; background: #f5c842; top: 40%; left: 40%; animation-delay: -10s; }
 
-  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 52px 16px 80px; }
 
   /* ─── TOP BAR ─── */
   .top-bar {
-    position: fixed; top: 12px; right: 16px;
+    position: fixed; top: 38px; right: 16px;
     display: flex; align-items: center; gap: 12px; z-index: 100;
   }
 
@@ -99,6 +104,36 @@
   .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
   .sync-dot.live  { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .sync-dot.error { background: var(--red); }
+
+  /* ─── INTEL TICKER ─── */
+  .ticker {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 26px; z-index: 90;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ticker-inner {
+    display: flex; align-items: center; gap: 28px;
+    height: 100%; padding: 0 16px;
+    white-space: nowrap;
+    font-family: 'Orbitron', monospace; font-size: 9px;
+    letter-spacing: 1.5px; color: var(--muted);
+    animation: tickerScroll 38s linear infinite;
+  }
+  .ticker-inner b { font-weight: 700; color: var(--cyan); }
+  .ticker-inner .t-gold  { color: var(--gold); }
+  .ticker-inner .t-green { color: var(--green); }
+  .ticker-inner .t-purple{ color: var(--purple); }
+  .ticker-inner .t-red   { color: var(--red); }
+  .ticker-sep { color: var(--border); }
+  @keyframes tickerScroll {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(-100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-inner { animation: none; }
+  }
 
   .theme-btn {
     width: 34px; height: 34px; border-radius: 50%;
@@ -227,7 +262,12 @@
     flex: 1; min-width: 120px; background: var(--surface);
     border: 1px solid var(--border); border-radius: 12px; padding: 16px;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
-    transition: background 0.3s, border-color 0.3s;
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  }
+  .arc-card:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 22px rgba(0,229,255,0.15);
+    transform: translateY(-2px);
   }
 
   .arc-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
@@ -315,13 +355,24 @@
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 13px 16px; margin-bottom: 8px;
     display: flex; align-items: flex-start; gap: 12px;
-    transition: border-color 0.2s, opacity 0.3s, background 0.3s;
+    transition: border-color 0.2s, opacity 0.3s, background 0.3s, box-shadow 0.2s;
     animation: slideIn 0.3s ease; overflow: hidden;
   }
+  .task-item:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(0,229,255,0.12); }
 
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  @keyframes stampIn {
+    from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
   }
 
   .task-item.done { opacity: 0.5; }
@@ -940,6 +991,8 @@
   </button>
 </div>
 
+<div class="ticker"><div class="ticker-inner" id="tickerInner"></div></div>
+
 <div class="levelup-overlay" id="levelupOverlay">
   <div class="levelup-box" id="levelupText">RANK UP!</div>
 </div>
@@ -1451,9 +1504,12 @@ function updatePlayerCard() {
   document.getElementById('xpBar').style.boxShadow  = `0 0 10px ${tierColor}`;
   document.getElementById('xpCurrent').textContent  = progress.total_xp + ' XP';
   document.getElementById('xpNext').textContent     = rank.index < RANKS.length - 1 ? '→ ' + next.min + ' XP' : '👑 TRUE SHINOBI';
-  document.getElementById('statStreak').textContent = progress.streak;
-  document.getElementById('statXP').textContent     = progress.total_xp;
-  document.getElementById('statDone').textContent   = tasks.filter(t => t.completed).length;
+  countUp(document.getElementById('statStreak'), progress.streak);
+  countUp(document.getElementById('statXP'), progress.total_xp);
+  countUp(document.getElementById('statDone'), tasks.filter(t => t.completed).length);
+  pulseEl(document.getElementById('statXP'));
+  pulseEl(document.getElementById('statDone'));
+  pulseEl(document.getElementById('statStreak'));
 
   // update rank ring color
   const ringEl = document.querySelector('.rank-ring');
@@ -1671,9 +1727,8 @@ function setSyncStatus(s) {
 }
 
 async function init() {
-  document.getElementById('dateBadge').textContent =
-    new Date().toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
   setSyncStatus('connecting');
+  startClock();
   try {
     const [rawTasks, rawProg] = await Promise.all([loadTasks(), loadProgress()]);
     tasks = rawTasks || [];
@@ -1693,12 +1748,70 @@ async function init() {
     await rolloverMissedTasks();
     renderTasks(); renderArcs(); updatePlayerCard();
     renderProfile();
+    buildTicker();
+    setInterval(buildTicker, 3000);
     setSyncStatus('live');
   } catch(e) {
     setSyncStatus('error');
     showToast('Could not connect to Supabase');
     console.error(e);
   }
+}
+
+// ─── LIVE INTEL TICKER ──────────────────────────────────────────────────
+function buildTicker() {
+  const el = document.getElementById('tickerInner');
+  if (!el) return;
+  const done  = tasks.filter(t => t.completed).length;
+  const total = tasks.length;
+  const todayXp = tasks.filter(t => t.completed).reduce((s, t) => s + (t.xp || 0), 0);
+  const rank    = getRank(progress.total_xp);
+  const now     = new Date();
+  const clock   = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const parts = [
+    `<b>ARC STATUS</b> <span class="t-gold">${rank.name}</span>`,
+    `<b>XP</b> <span class="t-green">${progress.total_xp}</span>`,
+    `<b>STREAK</b> <span class="t-purple">${progress.streak} DAY${progress.streak === 1 ? '' : 'S'}</span>`,
+    `<b>QUESTS</b> <span class="t-cyan">${done}/${total}</span>`,
+    `<b>XP TODAY</b> <span class="t-green">+${todayXp}</span>`,
+    `<b>CLOCK</b> <span class="t-cyan">${clock}</span>`
+  ];
+  el.innerHTML = parts.map(p => `<span>${p}</span><span class="ticker-sep">◆</span>`).join('');
+}
+
+// ─── LIVE CLOCK IN DATE BADGE ────────────────────────────────────────────
+function startClock() {
+  const badge = document.getElementById('dateBadge');
+  if (!badge) return;
+  function tick() {
+    const d = new Date();
+    badge.textContent =
+      d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' }).toUpperCase() +
+      ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ─── COUNT-UP ANIMATION ──────────────────────────────────────────────────
+function countUp(el, target, suffix = '', dur = 500) {
+  if (!el) return;
+  const start = performance.now();
+  const from  = 0;
+  function step(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (target - from) * ease) + suffix;
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function pulseEl(el) {
+  if (!el) return;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'pulse 0.4s ease';
 }
 
 document.getElementById('taskInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
