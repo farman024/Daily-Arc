@@ -321,7 +321,7 @@
     color: var(--muted); transition: all 0.2s;
   }
   .rarity-btn:hover { transform: translateY(-1px); }
-  .rarity-btn.active { border-color: currentColor; color: #000; background: currentColor; box-shadow: 0 0 12px currentColor; }
+  .rarity-btn.active { border-color: currentColor; color: #000; box-shadow: 0 0 12px currentColor; }
   .habit-toggle {
     display: flex; align-items: center; gap: 8px; cursor: pointer;
     font-size: 12px; color: var(--muted); letter-spacing: 1px; user-select: none;
@@ -1255,7 +1255,7 @@
         </div>
         <div class="meta-row">
           <div class="rarity-picker" id="rarityPicker">
-            <button class="rarity-btn active" data-rarity="E" onclick="selectRarity(this)" title="E-Rank · x1 XP">E</button>
+            <button class="rarity-btn active" data-rarity="E" onclick="selectRarity(this)" title="E-Rank · x1 XP" style="background:#b8c4d0;color:#000">E</button>
             <button class="rarity-btn" data-rarity="D" onclick="selectRarity(this)" title="D-Rank · x1.25 XP" style="color:#4ade80">D</button>
             <button class="rarity-btn" data-rarity="C" onclick="selectRarity(this)" title="C-Rank · x1.5 XP" style="color:#00e5ff">C</button>
             <button class="rarity-btn" data-rarity="B" onclick="selectRarity(this)" title="B-Rank · x2 XP" style="color:#c084fc">B</button>
@@ -1756,11 +1756,11 @@ let selHabit  = false;
 function selectRarity(btn) {
   selRarity = btn.dataset.rarity || 'E';
   document.querySelectorAll('.rarity-btn').forEach(b => {
-    b.classList.toggle('active', b === btn);
-    if (b === btn) b.style.color = '#000';
-  });
-  document.querySelectorAll('.rarity-btn').forEach(b => {
-    if (b !== btn) b.style.color = RARITIES[b.dataset.rarity].color;
+    const active = b === btn;
+    const c = RARITIES[b.dataset.rarity].color;
+    b.classList.toggle('active', active);
+    b.style.background = active ? c : 'transparent';
+    b.style.color      = active ? '#000' : c;
   });
 }
 
