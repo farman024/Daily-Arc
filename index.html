@@ -310,6 +310,34 @@
   /* custom category picker */
   .cat-picker { display: flex; gap: 6px; flex-wrap: wrap; }
 
+  /* rarity + habit options row */
+  .meta-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .rarity-picker { display: flex; gap: 5px; }
+  .rarity-btn {
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--muted); transition: all 0.2s;
+  }
+  .rarity-btn:hover { transform: translateY(-1px); }
+  .rarity-btn.active { border-color: currentColor; color: #000; background: currentColor; box-shadow: 0 0 12px currentColor; }
+  .habit-toggle {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 12px; color: var(--muted); letter-spacing: 1px; user-select: none;
+  }
+  .habit-toggle .switch {
+    width: 34px; height: 18px; border-radius: 99px; background: var(--input-bg);
+    border: 1px solid var(--border); position: relative; transition: all 0.2s; flex-shrink: 0;
+  }
+  .habit-toggle .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--muted); transition: all 0.2s;
+  }
+  .habit-toggle.active { color: var(--cyan); }
+  .habit-toggle.active .switch { border-color: var(--cyan); background: rgba(0,229,255,0.12); }
+  .habit-toggle.active .switch::after { left: 18px; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
   .cat-pick-btn {
     display: flex; align-items: center; gap: 6px;
     background: var(--input-bg); border: 1px solid var(--border);
@@ -396,6 +424,19 @@
     padding: 3px 8px; border-radius: 99px; background: var(--bg);
     border: 1px solid var(--border); white-space: nowrap; transition: background 0.3s;
   }
+
+  /* rarity chip + habit badge */
+  .rarity-chip {
+    font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+    border: 1px solid; flex-shrink: 0; letter-spacing: 0.5px;
+  }
+  .task-item.done .rarity-chip { opacity: 0.45; }
+  .habit-badge {
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+    font-size: 9px; letter-spacing: 1px; color: var(--muted);
+  }
+  .habit-badge svg { width: 11px; height: 11px; }
 
   .task-delete, .task-edit {
     background: none; border: none; color: var(--muted); cursor: pointer;
@@ -1212,6 +1253,20 @@
             Health
           </button>
         </div>
+        <div class="meta-row">
+          <div class="rarity-picker" id="rarityPicker">
+            <button class="rarity-btn active" data-rarity="E" onclick="selectRarity(this)" title="E-Rank · x1 XP">E</button>
+            <button class="rarity-btn" data-rarity="D" onclick="selectRarity(this)" title="D-Rank · x1.25 XP" style="color:#4ade80">D</button>
+            <button class="rarity-btn" data-rarity="C" onclick="selectRarity(this)" title="C-Rank · x1.5 XP" style="color:#00e5ff">C</button>
+            <button class="rarity-btn" data-rarity="B" onclick="selectRarity(this)" title="B-Rank · x2 XP" style="color:#c084fc">B</button>
+            <button class="rarity-btn" data-rarity="A" onclick="selectRarity(this)" title="A-Rank · x3 XP" style="color:#f5c842">A</button>
+            <button class="rarity-btn" data-rarity="S" onclick="selectRarity(this)" title="S-Rank · x5 XP" style="color:#ff6b35">S</button>
+          </div>
+          <div class="habit-toggle" id="habitToggle" onclick="toggleHabit()" title="Repeat this quest daily">
+            <div class="switch"></div>
+            <span>DAILY HABIT</span>
+          </div>
+        </div>
         <button class="add-btn" onclick="addTask()">+ ADD QUEST</button>
       </div>
     </div>
@@ -1365,6 +1420,19 @@ const CATEGORIES = {
   personal: { label: 'Personal', color: '#c084fc', xp: 10 },
   health:   { label: 'Health',   color: '#4ade80', xp: 10 }
 };
+
+// Quest rarity — scaling XP multiplier + color (E is never shown colored; base)
+const RARITIES = {
+  E: { label: 'E', color: '#b8c4d0', mult: 1.0 },
+  D: { label: 'D', color: '#4ade80', mult: 1.25 },
+  C: { label: 'C', color: '#00e5ff', mult: 1.5 },
+  B: { label: 'B', color: '#c084fc', mult: 2.0 },
+  A: { label: 'A', color: '#f5c842', mult: 3.0 },
+  S: { label: 'S', color: '#ff6b35', mult: 5.0 }
+};
+function xpFor(cat, rarity) {
+  return Math.round((CATEGORIES[cat].xp || 10) * (RARITIES[rarity]?.mult || 1));
+}
 
 // SVG icons per category — no traditional emojis
 const CAT_ICONS = {
@@ -1609,6 +1677,8 @@ function makeTaskEl(task) {
       </svg>
     </div>
     <div class="task-text">${escHtml(task.title)}</div>
+    ${task.rarity && task.rarity !== 'E' ? `<span class="rarity-chip" style="color:${RARITIES[task.rarity].color};border-color:${RARITIES[task.rarity].color}55">${RARITIES[task.rarity].label}-RANK</span>` : ''}
+    ${task.repeat ? `<span class="habit-badge" title="Daily habit quest"><svg viewBox="0 0 16 16" fill="none"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 2v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="5" x2="8" y2="8" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="8" x2="10.5" y2="9.5" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round"/></svg>HABIT</span>` : ''}
     <div class="task-xp" style="color:${color};border-color:${color}40">+${task.xp} XP</div>
     <button class="task-edit" onclick="startEdit('${task.id}')" title="Edit quest">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1679,18 +1749,40 @@ function getSelectedCat() {
   return active ? active.dataset.cat : 'trading';
 }
 
+// rarity + habit picker state
+let selRarity = 'E';
+let selHabit  = false;
+
+function selectRarity(btn) {
+  selRarity = btn.dataset.rarity || 'E';
+  document.querySelectorAll('.rarity-btn').forEach(b => {
+    b.classList.toggle('active', b === btn);
+    if (b === btn) b.style.color = '#000';
+  });
+  document.querySelectorAll('.rarity-btn').forEach(b => {
+    if (b !== btn) b.style.color = RARITIES[b.dataset.rarity].color;
+  });
+}
+
+function toggleHabit() {
+  selHabit = !selHabit;
+  const el = document.getElementById('habitToggle');
+  el.classList.toggle('active', selHabit);
+}
+
 async function addTask() {
   const input = document.getElementById('taskInput');
   const cat   = getSelectedCat();
   const title = input.value.trim();
   if (!title) { showToast('Write your quest first'); return; }
+  const xp = xpFor(cat, selRarity);
   try {
-    const [saved] = await insertTask({ title, category: cat, completed: false, xp: CATEGORIES[cat].xp, date: todayStr });
+    const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit });
     tasks.push(saved);
     input.value = '';
     playAdd();
     renderTasks(); renderArcs(); updatePlayerCard();
-    showToast('Quest added! +' + CATEGORIES[cat].xp + ' XP on completion');
+    showToast(`Quest added! +${xp} XP on completion`);
   } catch(e) { showToast('Error saving quest'); console.error(e); }
 }
 
@@ -1711,12 +1803,20 @@ async function toggleTask(id, wasDone) {
 
 async function removeTask(id, xp, wasDone) {
   try {
-    await deleteTask(id);
+    const task = tasks.find(t => t.id == id);
+    if (task && task.repeat) {
+      // deleting a habit removes its history so it never respawns
+      const habitRows = await sb('GET', 'daily_tasks', null,
+        `?repeat=eq.true&category=eq.${task.category}&title=eq.${encodeURIComponent(task.title)}`);
+      if (habitRows && habitRows.length) await Promise.all(habitRows.map(h => deleteTask(h.id)));
+    } else {
+      await deleteTask(id);
+    }
     if (wasDone) progress.total_xp = Math.max(0, progress.total_xp - xp);
     tasks = tasks.filter(t => t.id != id);
     await saveProgress(progress);
     renderTasks(); renderArcs(); updatePlayerCard();
-    showToast('Quest removed');
+    showToast(task && task.repeat ? 'Habit deleted' : 'Quest removed');
   } catch(e) { showToast('Delete error'); console.error(e); }
 }
 
@@ -1746,6 +1846,8 @@ async function init() {
     prevLevel = getRank(progress.total_xp).index;
     // rollover missed tasks from previous days
     await rolloverMissedTasks();
+    // respawn daily habits for today
+    await spawnHabitQuests();
     renderTasks(); renderArcs(); updatePlayerCard();
     renderProfile();
     buildTicker();
@@ -1866,9 +1968,9 @@ async function calcRealStreak() {
 }
 async function rolloverMissedTasks() {
   try {
-    // fetch all incomplete tasks before today
+    // fetch all incomplete non-habit tasks before today
     const missed = await sb('GET', 'daily_tasks', null,
-      `?date=lt.${todayStr}&completed=eq.false&order=date.asc`);
+      `?date=lt.${todayStr}&completed=eq.false&repeat=is.null&order=date.asc`);
     if (!missed || !missed.length) return;
 
     // move each missed task to today by updating its date
@@ -1882,6 +1984,40 @@ async function rolloverMissedTasks() {
     else if (missed.length > 1) showToast(`${missed.length} missed quests rolled over to today`);
   } catch(e) {
     console.error('Rollover error:', e);
+  }
+}
+
+// ─── HABIT RESPAWN ──────────────────────────────────────────────────────
+async function spawnHabitQuests() {
+  try {
+    // all habit rows ever (completed ones are history, define the habit set)
+    const habits = await sb('GET', 'daily_tasks', null, `?repeat=eq.true&order=date.asc`);
+    if (!habits || !habits.length) return;
+
+    // distinct (category,title) → latest rarity/xp definition
+    const defs = {};
+    habits.forEach(t => {
+      const key = t.category + '|' + t.title;
+      defs[key] = { category: t.category, title: t.title, rarity: t.rarity || 'E', xp: t.xp };
+    });
+
+    const todayRows = (await loadTasks()) || [];
+    const missing = Object.keys(defs).filter(key => {
+      const d = defs[key];
+      return !todayRows.some(t => t.category === d.category && t.title === d.title);
+    });
+
+    if (missing.length) {
+      const inserts = missing.map(key => insertTask({
+        title: defs[key].title, category: defs[key].category, completed: false,
+        xp: defs[key].xp, date: todayStr, rarity: defs[key].rarity, repeat: true
+      }));
+      await Promise.all(inserts);
+      tasks = (await loadTasks()) || [];
+      if (missing.length) showToast(`${missing.length} daily ${missing.length === 1 ? 'habit' : 'habits'} respawned`);
+    }
+  } catch(e) {
+    console.error('Habit spawn error:', e);
   }
 }
 

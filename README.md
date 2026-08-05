@@ -22,6 +22,8 @@ Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc 
 
 ### Core Loop
 - **Quest Board** — Log daily quests across 4 categories: Trading (15 XP), Building (12 XP), Personal (10 XP), Health (10 XP)
+- **Quest Rarity (E → S)** — Tag any quest with a rank: E (x1), D (x1.25), C (x1.5), B (x2), A (x3), S (x5). Higher rank = bigger XP reward, shown as a colored chip on the quest
+- **Daily Habit Quests** — Mark a quest as a daily habit and it auto-respawns every day; completed habit days stack into your streak, and deleting a habit removes its history so it never returns
 - **Arc Cards** — Circular SVG progress rings showing completion percentage per category and overall TODAY
 - **Inline Edit** — Edit quest text without leaving the list; Enter saves, Escape cancels
 - **Complete & Delete** — Check off quests for XP or delete them (XP adjusted)
@@ -53,7 +55,7 @@ Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc 
 ### Data & Sync
 - **Supabase Backend** — Progress syncs across devices via cloud database
 - **Real Streak Calculation** — Fetches all completed tasks across dates, counts consecutive days
-- **Missed Task Rollover** — Incomplete quests auto-roll to today
+- **Missed Task Rollover** — Incomplete quests auto-roll to today (habits excluded — they respawn fresh instead)
 - **Profile** — Custom display name and profile photo (upload or URL), stored in cloud
 
 ### Authentication
