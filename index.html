@@ -12,8 +12,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#0a0a0f" id="themeColorMeta"/>
 <meta name="description" content="Gamified daily quest board — Farman J · AI Generalist"/>
-<link rel="manifest" id="manifestLink"/>
-<link rel="apple-touch-icon" href="logo.png"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" href="icon-192.png"/>
 
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1370,31 +1371,9 @@ function toggleTheme() {
   document.getElementById('themeColorMeta').content = saved === 'dark' ? '#0a0a0f' : '#f0f0fa';
 })();
 
-// ─── PWA MANIFEST ────────────────────────────────────────────────────────
-(function injectManifest() {
-  const m = {
-    name: 'Daily Arc', short_name: 'Daily Arc',
-    description: 'Gamified daily quest board — Farman J',
-    start_url: './', display: 'standalone',
-    background_color: '#0a0a0f', theme_color: '#0a0a0f',
-    orientation: 'portrait-primary',
-    icons: [{ src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
-  };
-  const blob = new Blob([JSON.stringify(m)], { type: 'application/json' });
-  document.getElementById('manifestLink').href = URL.createObjectURL(blob);
-})();
-
 // ─── SERVICE WORKER ───────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  const sw = `
-    const CACHE='daily-arc-v1';
-    self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});
-    self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE).map(n=>caches.delete(n)))));self.clients.claim();});
-    self.addEventListener('fetch',e=>{if(e.request.url.includes('supabase')||e.request.url.includes('googleapis'))return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});
-  `;
-  navigator.serviceWorker.register(
-    URL.createObjectURL(new Blob([sw], { type: 'application/javascript' }))
-  ).catch(() => {});
+  navigator.serviceWorker.register('./sw.js?v=1').catch(() => {});
 }
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────

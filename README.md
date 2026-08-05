@@ -117,6 +117,21 @@ Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc 
 
 ---
 
+## File Structure
+
+```
+daily-arc/
+├── index.html      ← Full app (single HTML + CSS + JS)
+├── sw.js           ← Service Worker (offline cache, network-first navigations)
+├── manifest.json   ← PWA manifest
+├── logo.png        ← Brand logo (1254x1254)
+├── icon-192.png    ← App icon 192x192
+├── icon-512.png    ← App icon 512x512
+└── README.md       ← This file
+```
+
+---
+
 ## Built By
 
 **Farman J · AI Generalist** — Bangalore, India  
