@@ -1,4 +1,4 @@
-// Daily Arc — Service Worker v1 (network-first navigations, cache-first assets)
+// Daily Arc - Service Worker v1 (network-first navigations, cache-first assets)
 const CACHE = 'daily-arc-v1';
 
 const PRECACHE = [

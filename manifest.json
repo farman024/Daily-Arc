@@ -1,7 +1,7 @@
 {
   "name": "Daily Arc",
   "short_name": "Daily Arc",
-  "description": "Gamified daily quest board — Farman J",
+  "description": "Gamified daily quest board - Farman J",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
