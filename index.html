@@ -13,7 +13,7 @@
 <meta name="theme-color" content="#0a0a0f" id="themeColorMeta"/>
 <meta name="description" content="Gamified daily quest board — Farman J · AI Generalist"/>
 <link rel="manifest" id="manifestLink"/>
-<link rel="apple-touch-icon" href="logo.png"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
 
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1303,7 +1303,7 @@ function toggleTheme() {
     start_url: './', display: 'standalone',
     background_color: '#0a0a0f', theme_color: '#0a0a0f',
     orientation: 'portrait-primary',
-    icons: [{ src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
+    icons: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
   };
   const blob = new Blob([JSON.stringify(m)], { type: 'application/json' });
   document.getElementById('manifestLink').href = URL.createObjectURL(blob);
