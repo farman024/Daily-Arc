@@ -20,6 +20,13 @@ Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc 
 
 ## Features
 
+### Live Dashboard
+- **Intel Ticker** — Fixed top ticker streaming rank, XP, streak, quests done and the live clock; content rebuilds every 3 seconds
+- **Ticking Clock** — Live clock in the date badge, updated every second
+- **Count-Up Stats** — Streak / XP / quests-done numbers animate from zero whenever they refresh, with a pulse on change
+- **Hover Glow** — Task items and arc cards glow on hover; ambient orbs slowly drift behind the board
+- Respects `prefers-reduced-motion` — animations gracefully disable for users who prefer it
+
 ### Core Loop
 - **Quest Board** — Log daily quests across 4 categories: Trading (15 XP), Building (12 XP), Personal (10 XP), Health (10 XP)
 - **Quest Rarity (E → S)** — Tag any quest with a rank: E (x1), D (x1.25), C (x1.5), B (x2), A (x3), S (x5). Higher rank = bigger XP reward, shown as a colored chip on the quest
@@ -82,7 +89,7 @@ Built with a Naruto / cyber-ninja aesthetic — dark/light themes, animated arc 
 - **Photo Viewer** — Full-screen profile photo overlay
 - **Scrollbar Customization** — Thin scrollbar matching theme
 - **Grid Background** — Fixed 40px grid overlay
-- **Orb Effects** — 3 blurred gradient orbs (purple, cyan, gold)
+- **Orb Effects** — 3 blurred gradient orbs (purple, cyan, gold) that slowly drift
 - **Responsive** — Adapts at 520px breakpoint for mobile
 
 ---
