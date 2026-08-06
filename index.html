@@ -1188,7 +1188,8 @@ async function attemptLogin() {
   try {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
     if (error) {
-      errEl.textContent = 'Incorrect email or password';
+      errEl.textContent = error.message || 'Incorrect email or password';
+      console.error('Supabase login error:', error);
       document.getElementById('loginPass').value = '';
       return;
     }
