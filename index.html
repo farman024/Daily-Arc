@@ -1411,6 +1411,7 @@ let tasks    = [];
 let progress = { total_xp: 0, streak: 0, level: 0, last_active_date: null };
 let todayStr = new Date().toISOString().split('T')[0];
 let prevLevel = 0;
+let _suppressRankUp = true;
 
 // ─── THEME ───────────────────────────────────────────────────────────────
 function toggleTheme() {
@@ -1559,7 +1560,8 @@ function updatePlayerCard() {
     ringEl.style.borderRightColor = rank.index >= 5 ? '#ff00ff' : 'var(--purple)';
   }
 
-  if (rank.index > prevLevel) { prevLevel = rank.index; showLevelUp(rank.name); }
+  if (!_suppressRankUp && rank.index > prevLevel) { prevLevel = rank.index; showLevelUp(rank.name); }
+  else if (_suppressRankUp) { prevLevel = Math.max(prevLevel, rank.index); }
   if (roadmapOpen) renderRoadmap();
 }
 
@@ -1813,9 +1815,10 @@ async function init() {
   // instant paint from cache so checklists open even if Supabase is slow/yesterday's failure
   try{
     const {t,p}=loadCache();
+    if(p){ progress=p; prevLevel=getRank(progress.total_xp).index; _suppressRankUp=true; }
     if(t && t.length){ tasks=t; renderTasks(); renderArcs(); }
-    if(p){ progress=p; updatePlayerCard(); }
-    if(t || p){ renderProfile(); buildTicker(); setInterval(buildTicker,3000); }
+    if(p){ updatePlayerCard(); }
+    if(t || p){ renderProfile(); buildTicker(); if(!window._tickerIv) window._tickerIv=setInterval(buildTicker,3000); }
   }catch{}
   try {
     const [rawTasks, rawProg] = await Promise.all([loadTasks(), loadProgress()]);
@@ -1838,6 +1841,7 @@ async function init() {
       renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
     };
     prevLevel = getRank(progress.total_xp).index;
+    _suppressRankUp=true;
     renderTasks(); renderArcs(); updatePlayerCard();
     renderProfile();
     buildTicker();
@@ -1845,6 +1849,7 @@ async function init() {
     if(!window._tickerIv) window._tickerIv=setInterval(buildTicker, 3000);
     saveCache();
     setSyncStatus('live');
+    _suppressRankUp=false;
     // run streak/rollover in background
     if(window.requestIdleCallback) requestIdleCallback(doHeavy, {timeout:1500}); else setTimeout(doHeavy, 200);
   } catch(e) {
