@@ -908,6 +908,7 @@
     .player-card { flex-direction: column; align-items: flex-start; }
     .stats-row   { gap: 14px; }
     .arc-card    { min-width: 100px; }
+    .orb { filter: blur(40px); }
   }
 </style>
 </head>
@@ -1428,7 +1429,7 @@ function toggleTheme() {
 
 // ─── SERVICE WORKER ───────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=1').catch(() => {});
+  navigator.serviceWorker.register('./sw.js?v=2').catch(() => {});
 }
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────
@@ -1448,30 +1449,51 @@ function playAdd()      { tone(400,0.08); tone(600,0.15,undefined,undefined,0.08
 function playComplete() { tone(523,0.1); tone(659,0.1,undefined,undefined,0.1); tone(784,0.3,undefined,undefined,0.2); }
 function playLevelUp()  { [523,659,784,1047].forEach((f,i) => tone(f, 0.3, 'triangle', 0.25, i*0.12)); }
 
+// ─── CACHE (local fallback for instant paint + offline) ──────────────────
+const CACHE_TASKS = 'dailyArc_tasks';
+const CACHE_PROG  = 'dailyArc_progress';
+function loadCache(){
+  try{
+    const t=JSON.parse(localStorage.getItem(CACHE_TASKS)||'null');
+    const p=JSON.parse(localStorage.getItem(CACHE_PROG)||'null');
+    return {t, p};
+  }catch{ return {t:null,p:null}; }
+}
+function saveCache(){
+  try{
+    localStorage.setItem(CACHE_TASKS, JSON.stringify(tasks));
+    localStorage.setItem(CACHE_PROG, JSON.stringify(progress));
+  }catch{}
+}
+
 // ─── SUPABASE ────────────────────────────────────────────────────────────
-async function sb(method, table, body, query='') {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  const token = session?.access_token || SUPABASE_KEY;
+async function sb(method, table, body, query='', timeoutMs=5000) {
+  const ctrl=new AbortController();
+  const tm=setTimeout(()=>ctrl.abort(), timeoutMs);
+  try{
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token || SUPABASE_KEY;
 
-  const authHeaders = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': 'Bearer ' + token,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
+    const authHeaders = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
 
-  // auto-attach the logged-in user's id on inserts so RLS ownership checks pass
-  if (method === 'POST' && body && session?.user?.id) {
-    body = Array.isArray(body)
-      ? body.map(b => ({ ...b, user_id: session.user.id }))
-      : { ...body, user_id: session.user.id };
-  }
+    // auto-attach the logged-in user's id on inserts so RLS ownership checks pass
+    if (method === 'POST' && body && session?.user?.id) {
+      body = Array.isArray(body)
+        ? body.map(b => ({ ...b, user_id: session.user.id }))
+        : { ...body, user_id: session.user.id };
+    }
 
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
-    method, headers: authHeaders, body: body ? JSON.stringify(body) : undefined
-  });
-  if (!r.ok) throw new Error(await r.text());
-  return r.status === 204 ? null : r.json();
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+      method, headers: authHeaders, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.status === 204 ? null : r.json();
+  } finally { clearTimeout(tm); }
 }
 
 const loadTasks    = ()       => sb('GET',    'daily_tasks',   null, `?date=eq.${todayStr}&order=created_at.asc`);
@@ -1677,12 +1699,13 @@ async function saveEdit(id) {
   if (!newTitle) { showToast('Quest title cannot be empty'); return; }
   const task = tasks.find(t => t.id == id);
   if (!task) return;
+  const prev=task.title;
+  task.title = newTitle;
+  renderTasks(); renderArcs(); saveCache();
+  showToast('Quest updated');
   try {
-    await updateTask(id, { title: newTitle });
-    task.title = newTitle;
-    renderTasks(); renderArcs();
-    showToast('Quest updated');
-  } catch(e) { showToast('Update error'); console.error(e); }
+    await updateTask(id, { title: newTitle }); saveCache();
+  } catch(e) { task.title=prev; renderTasks(); renderArcs(); saveCache(); showToast('Update error — reverted'); console.error(e); }
 }
 
 function escHtml(s) {
@@ -1727,48 +1750,55 @@ async function addTask() {
   const title = input.value.trim();
   if (!title) { showToast('Write your quest first'); return; }
   const xp = xpFor(cat, selRarity);
+  const tempId = Date.now();
+  const optimistic = { id: tempId, title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit, created_at: new Date().toISOString() };
+  tasks.push(optimistic);
+  input.value = '';
+  playAdd();
+  renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
+  showToast(`Quest added! +${xp} XP on completion`);
   try {
     const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit });
-    tasks.push(saved);
-    input.value = '';
-    playAdd();
-    renderTasks(); renderArcs(); updatePlayerCard();
-    showToast(`Quest added! +${xp} XP on completion`);
-  } catch(e) { showToast('Error saving quest'); console.error(e); }
+    if(saved && saved.id){ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1) tasks[idx]=saved; saveCache(); renderTasks(); }
+  } catch(e) { tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — quest will retry'); console.error(e); }
 }
 
 async function toggleTask(id, wasDone) {
   const nowDone = !wasDone;
   const task    = tasks.find(t => t.id == id);
   if (!task) return;
+  // optimistic — instant checkmark
+  const prevDone=task.completed, prevXp=progress.total_xp;
+  task.completed = nowDone;
+  if (nowDone) { progress.total_xp += task.xp; playComplete(); showToast('Quest complete! +' + task.xp + ' XP'); }
+  else         { progress.total_xp = Math.max(0, progress.total_xp - task.xp); }
+  progress.last_active_date = todayStr;
+  renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
   try {
     await updateTask(id, { completed: nowDone });
-    task.completed = nowDone;
-    if (nowDone) { progress.total_xp += task.xp; playComplete(); showToast('Quest complete! +' + task.xp + ' XP'); }
-    else         { progress.total_xp = Math.max(0, progress.total_xp - task.xp); }
-    progress.last_active_date = todayStr;
-    await saveProgress(progress);
-    renderTasks(); renderArcs(); updatePlayerCard();
-  } catch(e) { showToast('Sync error'); console.error(e); }
+    await saveProgress(progress); saveCache();
+  } catch(e) { task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e); }
 }
 
 async function removeTask(id, xp, wasDone) {
+  const task = tasks.find(t => t.id == id);
+  const prevTasks=[...tasks]; const prevXp=progress.total_xp;
+  // optimistic — remove instantly
+  if (wasDone) progress.total_xp = Math.max(0, progress.total_xp - xp);
+  tasks = tasks.filter(t => t.id != id);
+  renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
+  showToast(task && task.repeat ? 'Habit deleted' : 'Quest removed');
   try {
-    const task = tasks.find(t => t.id == id);
     if (task && task.repeat) {
-      // deleting a habit removes its history so it never respawns
       const habitRows = await sb('GET', 'daily_tasks', null,
         `?repeat=eq.true&category=eq.${task.category}&title=eq.${encodeURIComponent(task.title)}`);
       if (habitRows && habitRows.length) await Promise.all(habitRows.map(h => deleteTask(h.id)));
+      else await deleteTask(id);
     } else {
       await deleteTask(id);
     }
-    if (wasDone) progress.total_xp = Math.max(0, progress.total_xp - xp);
-    tasks = tasks.filter(t => t.id != id);
-    await saveProgress(progress);
-    renderTasks(); renderArcs(); updatePlayerCard();
-    showToast(task && task.repeat ? 'Habit deleted' : 'Quest removed');
-  } catch(e) { showToast('Delete error'); console.error(e); }
+    await saveProgress(progress); saveCache();
+  } catch(e) { tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e); }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
@@ -1780,6 +1810,13 @@ function setSyncStatus(s) {
 async function init() {
   setSyncStatus('connecting');
   startClock();
+  // instant paint from cache so checklists open even if Supabase is slow/yesterday's failure
+  try{
+    const {t,p}=loadCache();
+    if(t && t.length){ tasks=t; renderTasks(); renderArcs(); }
+    if(p){ progress=p; updatePlayerCard(); }
+    if(t || p){ renderProfile(); buildTicker(); setInterval(buildTicker,3000); }
+  }catch{}
   try {
     const [rawTasks, rawProg] = await Promise.all([loadTasks(), loadProgress()]);
     tasks = rawTasks || [];
@@ -1789,24 +1826,31 @@ async function init() {
       progress = { total_xp: 0, streak: 1, level: 0, last_active_date: todayStr };
       await saveProgress(progress);
     }
-
-    // calculate real streak from actual completed task dates
-    const realStreak = await calcRealStreak();
-    progress.streak  = realStreak;
-    await saveProgress({ streak: realStreak, last_active_date: todayStr });
+    saveCache();
+    // heavy work off the critical path — don't block first paint
+    const doHeavy = async ()=> {
+      try{
+        const realStreak = await calcRealStreak();
+        if(realStreak !== progress.streak){ progress.streak = realStreak; await saveProgress({ streak: realStreak, last_active_date: todayStr }); updatePlayerCard(); saveCache(); }
+      }catch{}
+      try{ await rolloverMissedTasks(); }catch{}
+      try{ await spawnHabitQuests(); }catch{}
+      renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
+    };
     prevLevel = getRank(progress.total_xp).index;
-    // rollover missed tasks from previous days
-    await rolloverMissedTasks();
-    // respawn daily habits for today
-    await spawnHabitQuests();
     renderTasks(); renderArcs(); updatePlayerCard();
     renderProfile();
     buildTicker();
-    setInterval(buildTicker, 3000);
+    // only start ticker interval once
+    if(!window._tickerIv) window._tickerIv=setInterval(buildTicker, 3000);
+    saveCache();
     setSyncStatus('live');
+    // run streak/rollover in background
+    if(window.requestIdleCallback) requestIdleCallback(doHeavy, {timeout:1500}); else setTimeout(doHeavy, 200);
   } catch(e) {
-    setSyncStatus('error');
-    showToast('Could not connect to Supabase');
+    // if we had cache, keep it visible; otherwise show error
+    if(!tasks.length) showToast('Could not connect to Supabase — showing cached quests');
+    setSyncStatus(tasks.length ? 'live' : 'error');
     console.error(e);
   }
 }
@@ -1873,9 +1917,9 @@ checkAuth();
 // ─── REAL STREAK CALCULATOR ───────────────────────────────────────────────
 async function calcRealStreak() {
   try {
-    // fetch all completed tasks ever, get unique dates
+    // fetch last ~year of completed tasks only (bounded)
     const allDone = await sb('GET', 'daily_tasks', null,
-      `?completed=eq.true&order=date.desc`);
+      `?completed=eq.true&order=date.desc&limit=500`, 5000);
     if (!allDone || !allDone.length) return 0;
 
     // get unique dates with at least 1 completed task
