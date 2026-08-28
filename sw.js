@@ -1,5 +1,5 @@
 // Daily Arc - Service Worker v1 (network-first navigations, cache-first assets)
-const CACHE = 'daily-arc-v2';
+const CACHE = 'daily-arc-v3';
 
 const PRECACHE = [
   './',
@@ -40,21 +40,21 @@ self.addEventListener('fetch', e => {
 
   e.respondWith(
     isNavigate
-      // Network-first: always serve latest HTML, cached copy only when offline
       ? fetch(e.request).then(res => {
-          if (res && res.status === 200) {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone).catch(()=>{}));
           }
           return res;
         }).catch(() => caches.match(e.request).then(cached => cached || caches.match('./index.html')))
-      // Cache-first for static assets
       : caches.match(e.request).then(cached => {
           const net = fetch(e.request).then(res => {
-            if (res && res.status === 200) {
-              caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+            if (res && res.ok) {
+              const clone = res.clone();
+              caches.open(CACHE).then(c => c.put(e.request, clone).catch(()=>{}));
             }
             return res;
-          }).catch(() => cached || caches.match('./index.html'));
+          }).catch(() => cached);
           return cached || net;
         })
   );
