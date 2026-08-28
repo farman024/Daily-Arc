@@ -1656,7 +1656,7 @@ function makeTaskEl(task) {
       </svg>
     </div>
     <div class="task-text">${escHtml(task.title)}</div>
-    ${task.rarity && task.rarity !== 'E' ? `<span class="rarity-chip" style="color:${RARITIES[task.rarity].color};border-color:${RARITIES[task.rarity].color}55">${RARITIES[task.rarity].label}-RANK</span>` : ''}
+    ${task.rarity && task.rarity !== 'E' ? `<span class="rarity-chip" onclick="startEdit('${task.id}')" title="Edit rank" style="color:${RARITIES[task.rarity].color};border-color:${RARITIES[task.rarity].color}55;cursor:pointer">${RARITIES[task.rarity].label}-RANK</span>` : `<span class="rarity-chip" onclick="startEdit('${task.id}')" title="Edit rank" style="color:${RARITIES.E.color};border-color:${RARITIES.E.color}55;cursor:pointer;opacity:0.6">E-RANK</span>`}
     ${task.repeat ? `<span class="habit-badge" title="Daily habit quest"><svg viewBox="0 0 16 16" fill="none"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 2v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="5" x2="8" y2="8" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="8" x2="10.5" y2="9.5" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round"/></svg>HABIT</span>` : ''}
     <div class="task-xp" style="color:${color};border-color:${color}40">+${task.xp} XP</div>
     <button class="task-edit" onclick="startEdit('${task.id}')" title="Edit quest">
@@ -1675,12 +1675,19 @@ function makeTaskEl(task) {
   return el;
 }
 
+let editRarity='E';
 function startEdit(id) {
   const task = tasks.find(t => t.id == id);
   if (!task) return;
+  editRarity=task.rarity || 'E';
   const el = document.getElementById('task-' + id);
   el.innerHTML = `
-    <input class="task-edit-input" id="edit-input-${id}" value="${escHtml(task.title)}" maxlength="200"/>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">
+      <input class="task-edit-input" id="edit-input-${id}" value="${escHtml(task.title)}" maxlength="200"/>
+      <div class="rarity-picker" id="edit-rarity-${id}" style="display:flex;gap:5px">
+        ${Object.keys(RARITIES).map(r=>`<button class="rarity-btn ${r===editRarity?'active':''}" data-r="${r}" onclick="pickEditRarity('${r}','${id}')" style="${r===editRarity?`background:${RARITIES[r].color};color:#000;border-color:${RARITIES[r].color}`:''}">${r}</button>`).join('')}
+      </div>
+    </div>
     <button class="task-save-btn" onclick="saveEdit('${id}')">SAVE</button>
     <button class="task-delete" onclick="cancelEdit('${id}')">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1692,6 +1699,19 @@ function startEdit(id) {
   const input = document.getElementById('edit-input-' + id);
   input.focus();
   input.addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(id); if (e.key === 'Escape') cancelEdit(id); });
+}
+function pickEditRarity(r, id){
+  editRarity=r;
+  const row=document.getElementById('edit-rarity-'+id);
+  if(!row) return;
+  row.querySelectorAll('.rarity-btn').forEach(b=>{
+    const rr=b.dataset.r;
+    const active=rr===r;
+    b.classList.toggle('active', active);
+    b.style.background=active? RARITIES[rr].color : '';
+    b.style.color=active? '#000' : '';
+    b.style.borderColor=active? RARITIES[rr].color : '';
+  });
 }
 
 function cancelEdit(id) {
@@ -1705,13 +1725,22 @@ async function saveEdit(id) {
   if (!newTitle) { showToast('Quest title cannot be empty'); return; }
   const task = tasks.find(t => t.id == id);
   if (!task) return;
-  const prev=task.title;
+  const prev={title:task.title, rarity:task.rarity, xp:task.xp};
+  const newRarity=editRarity || task.rarity || 'E';
+  const newXp=xpFor(task.category, newRarity);
+  const xpDiff=newXp - task.xp;
   task.title = newTitle;
+  task.rarity=newRarity;
+  task.xp=newXp;
+  if(task.completed && xpDiff!==0){ progress.total_xp=Math.max(0, progress.total_xp+xpDiff); updatePlayerCard(); }
   renderTasks(); renderArcs(); saveCache();
-  showToast('Quest updated');
+  showToast(xpDiff!==0? `Rank ${newRarity} • ${newXp} XP` : 'Quest updated');
   try {
-    await updateTask(id, { title: newTitle }); saveCache();
-  } catch(e) { task.title=prev; renderTasks(); renderArcs(); saveCache(); showToast('Update error — reverted'); console.error(e); }
+    const patch={ title: newTitle, rarity: newRarity, xp: newXp };
+    await updateTask(id, patch);
+    if(xpDiff!==0) await saveProgress(progress);
+    saveCache();
+  } catch(e) { task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Update error — reverted'); console.error(e); }
 }
 
 function escHtml(s) {
