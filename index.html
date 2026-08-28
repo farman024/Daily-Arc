@@ -1743,7 +1743,11 @@ async function saveEdit(id) {
     await updateTask(id, patch);
     if(xpDiff!==0) await saveProgress(progress);
     saveCache();
-  } catch(e) { task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Update error — reverted'); console.error(e); }
+  } catch(e) {
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { title: newTitle, rarity: newRarity, xp: newXp }).then(()=> xpDiff!==0 ? saveProgress(progress) : null).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Update error — reverted'); console.error(e);
+  }
 }
 
 function escHtml(s) {
@@ -1798,7 +1802,11 @@ async function addTask() {
   try {
     const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit });
     if(saved && saved.id){ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1) tasks[idx]=saved; saveCache(); renderTasks(); }
-  } catch(e) { tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — quest will retry'); console.error(e); }
+  } catch(e) {
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('Sync pending — will retry'); console.warn(e); setTimeout(()=>{ insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit }).then(([s])=>{ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1 && s) tasks[idx]=s; saveCache(); setSyncStatus('live'); }).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — reverted'); console.error(e);
+  }
 }
 
 async function toggleTask(id, wasDone) {
@@ -1815,7 +1823,11 @@ async function toggleTask(id, wasDone) {
   try {
     await updateTask(id, { completed: nowDone });
     await saveProgress(progress); saveCache();
-  } catch(e) { task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e); }
+  } catch(e) {
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { completed: nowDone }).then(()=>saveProgress(progress)).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e);
+  }
 }
 
 async function removeTask(id, xp, wasDone) {
@@ -1836,7 +1848,11 @@ async function removeTask(id, xp, wasDone) {
       await deleteTask(id);
     }
     await saveProgress(progress); saveCache();
-  } catch(e) { tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e); }
+  } catch(e) {
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ deleteTask(id).then(()=>saveProgress(progress)).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e);
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
