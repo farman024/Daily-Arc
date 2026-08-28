@@ -1568,7 +1568,9 @@ function updatePlayerCard() {
   document.getElementById('xpBar').style.background = `linear-gradient(90deg, ${tierColor}, var(--purple))`;
   document.getElementById('xpBar').style.boxShadow  = `0 0 10px ${tierColor}`;
   document.getElementById('xpCurrent').textContent  = progress.total_xp + ' XP';
-  document.getElementById('xpNext').textContent     = rank.index < RANKS.length - 1 ? '→ ' + next.min + ' XP' : '👑 TRUE SHINOBI';
+  const xpNextEl = document.getElementById('xpNext');
+  if (rank.index < RANKS.length - 1) { xpNextEl.textContent = '→ ' + next.min + ' XP'; xpNextEl.style.display=''; }
+  else { xpNextEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l5 5 4-4 4 4 5-5"/><path d="M5 12v4h14v-4"/><path d="M2 7l3-3 4 4 4-4 4 4 3-3"/></svg> TRUE SHINOBI</span>'; xpNextEl.style.display='inline-flex'; }
   countUp(document.getElementById('statStreak'), progress.streak);
   countUp(document.getElementById('statXP'), progress.total_xp);
   countUp(document.getElementById('statDone'), tasks.filter(t => t.completed).length);
