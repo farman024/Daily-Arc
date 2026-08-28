@@ -1412,6 +1412,7 @@ let progress = { total_xp: 0, streak: 0, level: 0, last_active_date: null };
 let todayStr = new Date().toISOString().split('T')[0];
 let prevLevel = 0;
 let _suppressRankUp = true;
+let _lastXp = 0;
 
 // ─── THEME ───────────────────────────────────────────────────────────────
 function toggleTheme() {
@@ -1560,8 +1561,11 @@ function updatePlayerCard() {
     ringEl.style.borderRightColor = rank.index >= 5 ? '#ff00ff' : 'var(--purple)';
   }
 
-  if (!_suppressRankUp && rank.index > prevLevel) { prevLevel = rank.index; showLevelUp(rank.name); }
-  else if (_suppressRankUp) { prevLevel = Math.max(prevLevel, rank.index); }
+  // only animate when XP actually grew — prevents phantom on reload
+  if (!_suppressRankUp && rank.index > prevLevel && progress.total_xp > _lastXp) { prevLevel = rank.index; _lastXp = progress.total_xp; showLevelUp(rank.name); }
+  else if (!_suppressRankUp && rank.index > prevLevel) { prevLevel = rank.index; _lastXp = progress.total_xp; }
+  else if (_suppressRankUp) { prevLevel = Math.max(prevLevel, rank.index); _lastXp = progress.total_xp; }
+  else { _lastXp = progress.total_xp; }
   if (roadmapOpen) renderRoadmap();
 }
 
