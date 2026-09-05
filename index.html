@@ -1841,11 +1841,16 @@ async function toggleTask(id, wasDone) {
   renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
   try {
     await updateTask(id, { completed: nowDone });
-    await saveProgress(progress); saveCache();
   } catch(e) {
     const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { completed: nowDone }).then(()=>saveProgress(progress)).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e);
+    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { completed: nowDone }).then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e); return;
+  }
+  try { await saveProgress(progress); saveCache(); }
+  catch(e){
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
+    console.error('saveProgress failed', e); showToast('XP save failed — will retry'); setTimeout(()=>saveProgress(progress).catch(()=>{}), 2000);
   }
 }
 
@@ -1866,11 +1871,16 @@ async function removeTask(id, xp, wasDone) {
     } else {
       await deleteTask(id);
     }
-    await saveProgress(progress); saveCache();
   } catch(e) {
     const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ deleteTask(id).then(()=>saveProgress(progress)).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e);
+    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ deleteTask(id).then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e); return;
+  }
+  try{ await saveProgress(progress); saveCache(); }
+  catch(e){
+    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
+    if(isTimeout){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
+    console.error('saveProgress failed', e); showToast('XP save will retry'); setTimeout(()=>saveProgress(progress).catch(()=>{}), 2000);
   }
 }
 
