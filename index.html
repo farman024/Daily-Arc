@@ -311,6 +311,40 @@
   /* custom category picker */
   .cat-picker { display: flex; gap: 6px; flex-wrap: wrap; }
 
+  .date-input {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; outline: none;
+    transition: border-color 0.2s, background 0.3s, color 0.3s; cursor: pointer;
+  }
+  .date-input:focus { border-color: var(--cyan); }
+  .date-input.backdated { border-color: var(--gold); color: var(--gold); }
+  .date-input::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+  /* ─── GAP DETECTION BANNER ─── */
+  .gap-banner {
+    display: none; align-items: center; gap: 14px;
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.35);
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .gap-banner-icon { flex-shrink: 0; }
+  .gap-banner-text { flex: 1; min-width: 180px; }
+  .gap-banner-title {
+    font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 1px; color: #f5a623; text-transform: uppercase;
+  }
+  .gap-banner-dates { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .gap-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .gap-banner-btn {
+    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .gap-banner-btn:hover { opacity: 0.8; }
+  .gap-banner-btn.primary { background: #f5a623; color: #000; border: none; }
+  .gap-banner-btn.ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
   /* rarity + habit options row */
   .meta-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .rarity-picker { display: flex; gap: 5px; }
@@ -1216,6 +1250,23 @@
     </div>
   </div>
 
+  <!-- GAP DETECTION BANNER -->
+  <div class="gap-banner" id="gapBanner">
+    <svg class="gap-banner-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="#f5a623" stroke-width="1.6"/>
+      <line x1="12" y1="7" x2="12" y2="13" stroke="#f5a623" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="12" cy="16.5" r="1" fill="#f5a623"/>
+    </svg>
+    <div class="gap-banner-text">
+      <div class="gap-banner-title">Missing entries detected</div>
+      <div class="gap-banner-dates" id="gapBannerDates"></div>
+    </div>
+    <div class="gap-banner-actions">
+      <button class="gap-banner-btn primary" onclick="logGapDay()">LOG NOW</button>
+      <button class="gap-banner-btn ghost" onclick="dismissGaps()">DISMISS</button>
+    </div>
+  </div>
+
   <!-- RANK ROADMAP -->
   <div class="rank-roadmap" id="rankRoadmap">
     <button class="roadmap-toggle" onclick="toggleRoadmap()">
@@ -1260,6 +1311,7 @@
           </button>
         </div>
         <div class="meta-row">
+          <input type="date" class="date-input" id="taskDateInput" title="Log for a different day"/>
           <div class="rarity-picker" id="rarityPicker">
             <button class="rarity-btn active" data-rarity="E" onclick="selectRarity(this)" title="E-Rank · x1 XP" style="background:#b8c4d0;color:#000">E</button>
             <button class="rarity-btn" data-rarity="D" onclick="selectRarity(this)" title="D-Rank · x1.25 XP" style="color:#4ade80">D</button>
@@ -1786,6 +1838,7 @@ function getSelectedCat() {
 
 // rarity + habit picker state
 let selRarity = 'E';
+let detectedGaps = [];
 let selHabit  = false;
 
 function selectRarity(btn) {
@@ -1810,20 +1863,32 @@ async function addTask() {
   const cat   = getSelectedCat();
   const title = input.value.trim();
   if (!title) { showToast('Write your quest first'); return; }
+  const dateInput  = document.getElementById('taskDateInput');
+  const targetDate = (dateInput && dateInput.value) ? dateInput.value : todayStr;
+  const isBackdated = targetDate !== todayStr;
   const xp = xpFor(cat, selRarity);
   const tempId = Date.now() + Math.floor(Math.random()*1000);
-  const optimistic = { id: tempId, title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit, created_at: new Date().toISOString() };
+  const optimistic = { id: tempId, title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit, created_at: new Date().toISOString() };
   tasks.push(optimistic);
   input.value = '';
   playAdd();
   renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
-  showToast(`Quest added! +${xp} XP on completion`);
+  showToast(isBackdated
+    ? `Quest logged for ${new Date(targetDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}! +${xp} XP`
+    : `Quest added! +${xp} XP on completion`);
+  // reset date picker back to today so the next quest defaults correctly
+  if (dateInput) { dateInput.value = todayStr; dateInput.classList.remove('backdated'); }
+  // if this fills a previously detected gap, drop it from the banner immediately
+  if (isBackdated && detectedGaps.includes(targetDate)) {
+    detectedGaps = detectedGaps.filter(d => d !== targetDate);
+    renderGapBanner();
+  }
   try {
-    const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit });
+    const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit });
     if(saved && saved.id){ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1) tasks[idx]=saved; saveCache(); renderTasks(); }
   } catch(e) {
     const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will retry'); console.warn(e); setTimeout(()=>{ insertTask({ title, category: cat, completed: false, xp, date: todayStr, rarity: selRarity, repeat: selHabit }).then(([s])=>{ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1 && s) tasks[idx]=s; saveCache(); setSyncStatus('live'); }).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    if(isTimeout){ showToast('Sync pending — will retry'); console.warn(e); setTimeout(()=>{ insertTask({ title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit }).then(([s])=>{ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1 && s) tasks[idx]=s; saveCache(); setSyncStatus('live'); }).catch(()=>setSyncStatus('error')); }, 2000); return; }
     tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — reverted'); console.error(e);
   }
 }
@@ -1893,6 +1958,15 @@ function setSyncStatus(s) {
 async function init() {
   setSyncStatus('connecting');
   startClock();
+  // set up the backdate picker — defaults to today, can't pick future dates
+  const dateInput = document.getElementById('taskDateInput');
+  if (dateInput) {
+    dateInput.value = todayStr;
+    dateInput.max = todayStr;
+    dateInput.addEventListener('change', () => {
+      dateInput.classList.toggle('backdated', dateInput.value !== todayStr);
+    });
+  }
   // instant paint from cache so checklists open even if Supabase is slow/yesterday's failure
   try{
     const {t,p}=loadCache();
@@ -1919,6 +1993,7 @@ async function init() {
       }catch{}
       try{ await rolloverMissedTasks(); }catch{}
       try{ await spawnHabitQuests(); }catch{}
+      try{ await detectGaps(); }catch{}
       renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
     };
     prevLevel = getRank(progress.total_xp).index;
@@ -2001,11 +2076,75 @@ document.getElementById('taskInput').addEventListener('keydown', e => { if (e.ke
 checkAuth();
 
 // ─── REAL STREAK CALCULATOR ───────────────────────────────────────────────
+// ─── GAP DETECTION ───────────────────────────────────────────────────────
+async function detectGaps() {
+  try {
+    const rows = await sb('GET', 'daily_tasks', null, `?select=date&order=date.asc&limit=5000`);
+    if (!rows || !rows.length) return;
+
+    const existingDates = new Set(rows.map(r => r.date));
+    const dismissed = JSON.parse(localStorage.getItem('da-dismissed-gaps') || '[]');
+
+    const firstDate = new Date(rows[0].date);
+    const end = new Date(todayStr);
+    end.setDate(end.getDate() - 1); // don't flag today — still in progress
+
+    // cap lookback to the last 60 days so old pre-history gaps aren't flagged forever
+    const cutoff = new Date(end);
+    cutoff.setDate(cutoff.getDate() - 60);
+    const rangeStart = firstDate > cutoff ? firstDate : cutoff;
+
+    const gaps = [];
+    for (let d = new Date(rangeStart); d <= end; d.setDate(d.getDate() + 1)) {
+      const dStr = d.toISOString().split('T')[0];
+      if (!existingDates.has(dStr) && !dismissed.includes(dStr)) gaps.push(dStr);
+    }
+    detectedGaps = gaps;
+    renderGapBanner();
+  } catch(e) {
+    console.error('Gap detection failed:', e);
+  }
+}
+
+function renderGapBanner() {
+  const banner = document.getElementById('gapBanner');
+  if (!banner) return;
+  if (!detectedGaps.length) { banner.style.display = 'none'; return; }
+  const formatted = detectedGaps
+    .map(d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))
+    .join(', ');
+  document.getElementById('gapBannerDates').textContent =
+    detectedGaps.length === 1 ? formatted : `${detectedGaps.length} days: ${formatted}`;
+  banner.style.display = 'flex';
+}
+
+function logGapDay() {
+  if (!detectedGaps.length) return;
+  const firstGap = detectedGaps[0];
+  const dateInput = document.getElementById('taskDateInput');
+  if (dateInput) {
+    dateInput.value = firstGap;
+    dateInput.classList.add('backdated');
+  }
+  document.querySelector('.add-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('taskInput')?.focus();
+  showToast('Logging for ' + new Date(firstGap).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+}
+
+function dismissGaps() {
+  const dismissed = JSON.parse(localStorage.getItem('da-dismissed-gaps') || '[]');
+  const merged = [...new Set([...dismissed, ...detectedGaps])];
+  localStorage.setItem('da-dismissed-gaps', JSON.stringify(merged));
+  detectedGaps = [];
+  renderGapBanner();
+}
+
 async function calcRealStreak() {
   try {
-    // fetch last ~year of completed tasks only (bounded)
+    // fetch only the date column (lightweight) with a much higher ceiling
+    // so a high daily task count never truncates the real streak length
     const allDone = await sb('GET', 'daily_tasks', null,
-      `?completed=eq.true&order=date.desc&limit=500`, 5000);
+      `?completed=eq.true&select=date&order=date.desc&limit=10000`, 8000);
     if (!allDone || !allDone.length) return 0;
 
     // get unique dates with at least 1 completed task
