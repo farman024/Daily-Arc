@@ -1524,6 +1524,31 @@ function saveCache(){
 }
 
 // ─── SUPABASE ────────────────────────────────────────────────────────────
+// Error classification: transient failures (timeout, dropped network, 408/429/5xx)
+// must NEVER revert optimistic UI — they retry. Only definite client rejections
+// (400/401/403/404/409/422) revert, with the server message surfaced.
+function sbError(message, status) {
+  const e = new Error(message || ('HTTP ' + status));
+  e.status = status;
+  e.retryable = (status === 0 || status === 408 || status === 429 || (status >= 500 && status <= 599));
+  return e;
+}
+function isRetryable(e) {
+  if (!e) return false;
+  if (e.retryable) return true;
+  if (e.message === 'timeout' || e.name === 'AbortError') return true;
+  if (e.name === 'TypeError' || /failed to fetch|networkerror|network request failed|load failed/i.test(e.message || '')) return true;
+  return false;
+}
+function shortErr(e, n=90) {
+  let m = (e && e.message) || 'unknown error';
+  try { const j = JSON.parse(m); m = j.message || j.error || j.hint || m; } catch {}
+  m = String(m).replace(/\s+/g, ' ').trim() || 'request failed';
+  if (m.length > n) m = m.slice(0, n) + '…';
+  return (e && e.status ? e.status + ' · ' : '') + m;
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function sb(method, table, body, query='', timeoutMs=12000) {
   for(let attempt=0; attempt<2; attempt++){
     const ctrl=new AbortController();
@@ -1545,14 +1570,28 @@ async function sb(method, table, body, query='', timeoutMs=12000) {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
         method, headers: authHeaders, body: b2 ? JSON.stringify(b2) : undefined, signal: ctrl.signal
       });
-      if (!r.ok) throw new Error(await r.text());
       clearTimeout(tm);
+      if (!r.ok) throw sbError(await r.text(), r.status);
       return r.status === 204 ? null : r.json();
     } catch(e){
       clearTimeout(tm);
-      const isTimeout = e && (e.name==='AbortError' || e.message==='timeout');
-      if(isTimeout && attempt===0){ console.warn('Supabase timeout, retrying', table); await new Promise(res=>setTimeout(res, 800)); continue; }
-      if(isTimeout){ console.warn('Supabase timeout', table); throw new Error('timeout'); }
+      // normalize fetch-level failures (timeout abort, dropped network) to retryable status-0 errors
+      if (e && !e.status && (e.name === 'AbortError' || e.message === 'timeout' || e.name === 'TypeError' ||
+          /failed to fetch|networkerror|network request failed|load failed/i.test(e.message || ''))) {
+        e = sbError(e.message === 'timeout' ? 'timeout' : ('network: ' + (e.message || 'request failed')), 0);
+      }
+      if (e && e.status === 401 && attempt === 0) {
+        // token may have expired mid-session — refresh once, then retry
+        try { await supabaseClient.auth.refreshSession(); } catch {}
+        console.warn('Supabase 401, refreshing session and retrying', table);
+        await new Promise(res=>setTimeout(res, 800));
+        continue;
+      }
+      if (isRetryable(e) && attempt === 0) {
+        console.warn('Supabase transient error, retrying', table, shortErr(e));
+        await new Promise(res=>setTimeout(res, 800));
+        continue;
+      }
       throw e;
     }
   }
@@ -1563,6 +1602,30 @@ const insertTask   = t        => sb('POST',   'daily_tasks',   t);
 const updateTask   = (id, p)  => sb('PATCH',  'daily_tasks',   p,    `?id=eq.${id}`);
 const deleteTask   = id       => sb('DELETE', 'daily_tasks',   null, `?id=eq.${id}`);
 const loadProgress = ()       => sb('GET',    'user_progress', null, '?limit=1');
+
+// Heal optimistic-only rows: a quest whose insert never returned a server id
+// (numeric tempId) would 400 every later update/delete. Save it fresh first so
+// the follow-up request targets a real uuid instead of erroring + reverting.
+async function ensureServerId(task) {
+  if (task && UUID_RE.test(String(task.id))) return task.id;
+  const [saved] = await insertTask({
+    title: task.title, category: task.category, completed: !!task.completed,
+    xp: task.xp, date: task.date, rarity: task.rarity, repeat: task.repeat
+  });
+  if (!saved || !saved.id) throw sbError('insert returned no id', 0);
+  const idx = tasks.findIndex(t => t.id === task.id);
+  task.id = saved.id;
+  if (idx !== -1) tasks[idx] = task;
+  saveCache();
+  return task.id;
+}
+
+function promptRelogin() {
+  setSyncStatus('error');
+  showToast('Session expired — log in again');
+  const gate = document.getElementById('loginGate');
+  if (gate) gate.style.display = 'flex';
+}
 
 async function saveProgress(p) {
   const ex = await loadProgress();
@@ -1581,7 +1644,7 @@ async function recalcCounts(){
     if(changed){ progress.last_active_date=todayStr; await saveProgress(progress); saveCache(); updatePlayerCard(); renderArcs(); showToast(msg.join(' • ') + ' fixed'); }
     else showToast('Counts already correct ✓');
     setSyncStatus('live');
-  }catch(e){ showToast('Recalc failed'); console.error(e); setSyncStatus('error'); }
+  }catch(e){ showToast('Recalc failed (' + shortErr(e) + ')'); console.error(e); setSyncStatus('error'); }
 }
 
 // ─── RANK ─────────────────────────────────────────────────────────────────
@@ -1809,15 +1872,15 @@ async function saveEdit(id) {
   if(task.completed && xpDiff!==0){ progress.total_xp=Math.max(0, progress.total_xp+xpDiff); updatePlayerCard(); }
   renderTasks(); renderArcs(); saveCache();
   showToast(xpDiff!==0? `Rank ${newRarity} • ${newXp} XP` : 'Quest updated');
+  const syncEdit = () => ensureServerId(task).then(sid => updateTask(sid, { title: newTitle, rarity: newRarity, xp: newXp }));
   try {
-    const patch={ title: newTitle, rarity: newRarity, xp: newXp };
-    await updateTask(id, patch);
+    await syncEdit();
     if(xpDiff!==0) await saveProgress(progress);
     saveCache();
   } catch(e) {
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { title: newTitle, rarity: newRarity, xp: newXp }).then(()=> xpDiff!==0 ? saveProgress(progress) : null).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Update error — reverted'); console.error(e);
+    if (e && e.status === 401) { task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); promptRelogin(); console.error(e); return; }
+    if(isRetryable(e)){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ syncEdit().then(()=> xpDiff!==0 ? saveProgress(progress) : null).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    task.title=prev.title; task.rarity=prev.rarity; task.xp=prev.xp; if(task.completed && xpDiff!==0) progress.total_xp=Math.max(0, progress.total_xp - xpDiff); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Update error — reverted (' + shortErr(e) + ')'); console.error(e);
   }
 }
 
@@ -1886,10 +1949,11 @@ async function addTask() {
   try {
     const [saved] = await insertTask({ title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit });
     if(saved && saved.id){ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1) tasks[idx]=saved; saveCache(); renderTasks(); }
+    else throw sbError('insert returned no id', 0);
   } catch(e) {
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will retry'); console.warn(e); setTimeout(()=>{ insertTask({ title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit }).then(([s])=>{ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1 && s) tasks[idx]=s; saveCache(); setSyncStatus('live'); }).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — reverted'); console.error(e);
+    if (e && e.status === 401) { tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); promptRelogin(); console.error(e); return; }
+    if(isRetryable(e)){ showToast('Sync pending — will retry'); console.warn(e); setTimeout(()=>{ insertTask({ title, category: cat, completed: false, xp, date: targetDate, rarity: selRarity, repeat: selHabit }).then(([s])=>{ const idx=tasks.findIndex(t=>t.id===tempId); if(idx!==-1 && s) tasks[idx]=s; saveCache(); setSyncStatus('live'); }).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    tasks=tasks.filter(t=>t.id!==tempId); renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync failed — reverted (' + shortErr(e) + ')'); console.error(e);
   }
 }
 
@@ -1904,17 +1968,17 @@ async function toggleTask(id, wasDone) {
   else         { progress.total_xp = Math.max(0, progress.total_xp - task.xp); }
   progress.last_active_date = todayStr;
   renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
+  const syncToggle = () => ensureServerId(task).then(sid => updateTask(sid, { completed: nowDone }));
   try {
-    await updateTask(id, { completed: nowDone });
+    await syncToggle();
   } catch(e) {
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ updateTask(id, { completed: nowDone }).then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted'); console.error(e); return;
+    if (e && e.status === 401) { task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); promptRelogin(); console.error(e); return; }
+    if(isRetryable(e)){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ syncToggle().then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    task.completed=prevDone; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Sync error — reverted (' + shortErr(e) + ')'); console.error(e); return;
   }
   try { await saveProgress(progress); saveCache(); }
   catch(e){
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
+    if(isRetryable(e)){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
     console.error('saveProgress failed', e); showToast('XP save failed — will retry'); setTimeout(()=>saveProgress(progress).catch(()=>{}), 2000);
   }
 }
@@ -1927,24 +1991,24 @@ async function removeTask(id, xp, wasDone) {
   tasks = tasks.filter(t => t.id != id);
   renderTasks(); renderArcs(); updatePlayerCard(); saveCache();
   showToast(task && task.repeat ? 'Habit deleted' : 'Quest removed');
+  const syncDelete = () => task ? ensureServerId(task).then(sid => deleteTask(sid)) : deleteTask(id);
   try {
     if (task && task.repeat) {
       const habitRows = await sb('GET', 'daily_tasks', null,
         `?repeat=eq.true&category=eq.${task.category}&title=eq.${encodeURIComponent(task.title)}`);
       if (habitRows && habitRows.length) await Promise.all(habitRows.map(h => deleteTask(h.id)));
-      else await deleteTask(id);
+      else await syncDelete();
     } else {
-      await deleteTask(id);
+      await syncDelete();
     }
   } catch(e) {
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ deleteTask(id).then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
-    tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted'); console.error(e); return;
+    if (e && e.status === 401) { tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); promptRelogin(); console.error(e); return; }
+    if(isRetryable(e)){ showToast('Sync pending — will sync'); setSyncStatus('offline'); setTimeout(()=>{ syncDelete().then(()=>saveProgress(progress).catch(()=>{})).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')); }, 2000); return; }
+    tasks=prevTasks; progress.total_xp=prevXp; renderTasks(); renderArcs(); updatePlayerCard(); saveCache(); showToast('Delete error — reverted (' + shortErr(e) + ')'); console.error(e); return;
   }
   try{ await saveProgress(progress); saveCache(); }
   catch(e){
-    const isTimeout = e && (e.message==='timeout' || e.name==='AbortError');
-    if(isTimeout){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
+    if(isRetryable(e)){ showToast('XP sync pending'); setSyncStatus('offline'); setTimeout(()=>saveProgress(progress).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('error')), 2000); return; }
     console.error('saveProgress failed', e); showToast('XP save will retry'); setTimeout(()=>saveProgress(progress).catch(()=>{}), 2000);
   }
 }
