@@ -1601,7 +1601,7 @@ const loadTasks    = ()       => sb('GET',    'daily_tasks',   null, `?date=eq.$
 const insertTask   = t        => sb('POST',   'daily_tasks',   t);
 const updateTask   = (id, p)  => sb('PATCH',  'daily_tasks',   p,    `?id=eq.${id}`);
 const deleteTask   = id       => sb('DELETE', 'daily_tasks',   null, `?id=eq.${id}`);
-const loadProgress = ()       => sb('GET',    'user_progress', null, '?limit=1');
+const loadProgress = ()       => sb('GET',    'user_progress', null, '?order=total_xp.desc&limit=1');
 
 // Heal optimistic-only rows: a quest whose insert never returned a server id
 // (numeric tempId) would 400 every later update/delete. Save it fresh first so
@@ -1630,12 +1630,23 @@ function promptRelogin() {
 async function saveProgress(p) {
   const ex = await loadProgress();
   if (ex && ex.length) return sb('PATCH', 'user_progress', p, `?id=eq.${ex[0].id}`);
-  return sb('POST', 'user_progress', p);
+  try {
+    return await sb('POST', 'user_progress', p);
+  } catch(e) {
+    if (e && (e.status === 409 || /duplicate|already exists/i.test(e.message || ''))) {
+      // a progress row exists but was invisible to the first read (RLS/race):
+      // re-read and patch it instead of stacking another duplicate row
+      const retry = await loadProgress();
+      if (retry && retry.length) return sb('PATCH', 'user_progress', p, `?id=eq.${retry[0].id}`);
+    }
+    throw e;
+  }
 }
 async function recalcCounts(){
   showToast('Recalculating…');
   try{
     const allDone = await sb('GET','daily_tasks',null,'?completed=eq.true&limit=1000');
+    if ((!allDone || !allDone.length) && tasks.length) { showToast('Recalc skipped \u2014 quests not loaded'); setSyncStatus('error'); return; }
     const sum = (allDone||[]).reduce((s,t)=>s+(t.xp||0),0);
     const realStreak = await calcRealStreak();
     let changed=false, msg=[];
